@@ -87,6 +87,7 @@ const VolebniKalkulacka = () => {
   const [zobrazitOdpovediStran, setZobrazitOdpovediStran] = useState<boolean>(false);
   const [zobrazitVsechnyStrany, setZobrazitVsechnyStrany] = useState<boolean>(false);
   const [aktivniOtazka, setAktivniOtazka] = useState<number>(0);
+  const [limitUpozorneni, setLimitUpozorneni] = useState<boolean>(false);
   
   // Reference pro hlavní container
   const containerRef = useRef<HTMLDivElement>(null);
@@ -100,10 +101,18 @@ const VolebniKalkulacka = () => {
       const newSet = new Set(prev);
       if (newSet.has(otazkaId)) {
         newSet.delete(otazkaId);
+        setLimitUpozorneni(false);
+        return newSet;
       } else {
+        // Kontrola limitu 5 zásadních otázek
+        if (newSet.size >= 5) {
+          setLimitUpozorneni(true);
+          return newSet;
+        }
+        
         newSet.add(otazkaId);
+        return newSet;
       }
-      return newSet;
     });
   };
 
@@ -415,11 +424,24 @@ const VolebniKalkulacka = () => {
                         id={`zasadni-${otazky[aktivniOtazka].id}`}
                         checked={zasadniOtazky.has(otazky[aktivniOtazka].id)}
                         onCheckedChange={() => handleZasadni(otazky[aktivniOtazka].id)}
+                        disabled={!zasadniOtazky.has(otazky[aktivniOtazka].id) && zasadniOtazky.size >= 5}
                       />
                       <Label htmlFor={`zasadni-${otazky[aktivniOtazka].id}`} className="cursor-pointer">
                         Tato otázka je pro mě zásadní (dvojnásobná váha)
                       </Label>
+                      <div className="text-xs text-gray-500 ml-1">
+                        ({zasadniOtazky.size}/5)
+                      </div>
                     </div>
+                    
+                    {limitUpozorneni && (
+                      <Alert className="mt-2 bg-amber-50 text-amber-800 border-amber-200">
+                        <Info className="h-4 w-4 mr-2" />
+                        <AlertDescription>
+                          Můžete označit maximálně 5 otázek jako zásadní.
+                        </AlertDescription>
+                      </Alert>
+                    )}
                   </div>
                 </div>
               </div>
