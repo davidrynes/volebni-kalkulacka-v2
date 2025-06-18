@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -91,44 +91,6 @@ const VolebniKalkulacka = () => {
   // Reference pro hlavní container
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    // Odešleme anonymní data při zobrazení výsledků
-    if (zobrazitVysledky) {
-      odesliAnonymniData();
-    }
-  }, [zobrazitVysledky]);
-
-  // Funkce pro odeslání anonymních dat
-  const odesliAnonymniData = async () => {
-    try {
-      const anonymniData = {
-        odpovedi: Object.fromEntries(
-          Object.entries(odpovedi).map(([id, hodnota]) => [id, hodnota])
-        ),
-        zasadniOtazky: Array.from(zasadniOtazky),
-        timestamp: new Date().toISOString(),
-        vysledky: Object.entries(stranyOdpovedi)
-          .map(([strana, odpovediStrany]) => ({
-            strana,
-            shoda: vypocitejShodu(odpovediStrany)
-          }))
-          .sort((a, b) => b.shoda - a.shoda)
-      };
-      
-      // Zde by bylo napojení na API endpoint pro ukládání dat
-      console.log("Odesílám anonymní data:", anonymniData);
-      
-      // Volání API pro ukládání dat
-      await fetch('/api/ulozit-odpovedi', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(anonymniData)
-      });
-    } catch (error) {
-      console.error("Chyba při odesílání dat:", error);
-    }
-  };
-
   const handleOdpoved = (otazkaId: number, hodnota: number) => {
     setOdpovedi(prev => ({ ...prev, [otazkaId]: hodnota }));
   };
@@ -191,6 +153,44 @@ const VolebniKalkulacka = () => {
     
     return Math.max(0, Math.min(100, Math.round(shoda)));
   };
+
+  // Funkce pro odeslání anonymních dat
+  const odesliAnonymniData = useCallback(async () => {
+    try {
+      const anonymniData = {
+        odpovedi: Object.fromEntries(
+          Object.entries(odpovedi).map(([id, hodnota]) => [id, hodnota])
+        ),
+        zasadniOtazky: Array.from(zasadniOtazky),
+        timestamp: new Date().toISOString(),
+        vysledky: Object.entries(stranyOdpovedi)
+          .map(([strana, odpovediStrany]) => ({
+            strana,
+            shoda: vypocitejShodu(odpovediStrany)
+          }))
+          .sort((a, b) => b.shoda - a.shoda)
+      };
+      
+      // Zde by bylo napojení na API endpoint pro ukládání dat
+      console.log("Odesílám anonymní data:", anonymniData);
+      
+      // Volání API pro ukládání dat
+      await fetch('/api/ulozit-odpovedi', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(anonymniData)
+      });
+    } catch (error) {
+      console.error("Chyba při odesílání dat:", error);
+    }
+  }, [odpovedi, zasadniOtazky, stranyOdpovedi, vypocitejShodu]);
+
+  useEffect(() => {
+    // Odešleme anonymní data při zobrazení výsledků
+    if (zobrazitVysledky) {
+      odesliAnonymniData();
+    }
+  }, [zobrazitVysledky, odesliAnonymniData]);
 
   const vysledky = zobrazitVysledky ? Object.entries(stranyOdpovedi)
     .map(([strana, odpovediStrany]) => ({
