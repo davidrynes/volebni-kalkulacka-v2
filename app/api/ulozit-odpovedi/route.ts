@@ -2,11 +2,14 @@ import { NextResponse } from "next/server";
 import * as fs from 'fs';
 import * as path from 'path';
 
+// Zjistíme, zda běžíme v produkčním prostředí (Vercel)
+const isProd = process.env.NODE_ENV === 'production' && process.env.VERCEL === '1';
+
 // Adresář pro ukládání dat (v produkčním prostředí by bylo lepší použít DB)
 const DATA_DIR = path.join(process.cwd(), 'data');
 
-// Zajistí, že adresář pro data existuje
-if (!fs.existsSync(DATA_DIR)) {
+// Zajistí, že adresář pro data existuje - pouze v lokálním prostředí
+if (!isProd && !fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
@@ -33,9 +36,14 @@ export async function POST(request: Request) {
       vysledky: data.vysledky
     };
 
-    // Uložení do JSON souboru
-    const filePath = path.join(DATA_DIR, `${id}.json`);
-    fs.writeFileSync(filePath, JSON.stringify(anonymizedData, null, 2));
+    // V produkčním prostředí (Vercel) pouze logujeme data
+    if (isProd) {
+      console.log('Odpověď uživatele (v produkci):', JSON.stringify(anonymizedData));
+    } else {
+      // V lokálním prostředí ukládáme do souboru
+      const filePath = path.join(DATA_DIR, `${id}.json`);
+      fs.writeFileSync(filePath, JSON.stringify(anonymizedData, null, 2));
+    }
 
     return NextResponse.json({ success: true, id });
   } catch (error) {
