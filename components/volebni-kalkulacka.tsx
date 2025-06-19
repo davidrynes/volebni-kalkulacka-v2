@@ -1,14 +1,22 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
-import { Download, Eye, EyeOff, RefreshCw, Info, Calculator, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Slider } from '@/components/ui/slider';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { 
+  Download, 
+  Eye, 
+  EyeOff, 
+  RefreshCw, 
+  Info, 
+  ChevronLeft, 
+  ChevronRight 
+} from 'lucide-react';
 
 // Definice typů
 interface Otazka {
@@ -33,8 +41,8 @@ interface MoznostOdpovedi {
 }
 
 const VolebniKalkulacka = () => {
-  // Skutečná data z Excel souboru
-  const otazky: Otazka[] = [
+  // Skutečná data z Excel souboru - zabaleno do useMemo
+  const otazky = useMemo<Otazka[]>(() => [
     { id: 1, text: "ČR by měla zastavit dodávku zbraní Ukrajině." },
     { id: 2, text: "Vláda by v letech 2026-2030 měla postupně navýšit výdaje na obranu nejméně na 3 % HDP." },
     { id: 3, text: "Zdanění prázdných a investičních bytů by se mělo zvýšit." },
@@ -50,10 +58,10 @@ const VolebniKalkulacka = () => {
     { id: 13, text: "Mělo by být vypsáno referendum o vystoupení ČR z EU." },
     { id: 14, text: "Pacienti by měli mít možnost připlatit si za nadstandardní zdravotní péči v nemocnicích." },
     { id: 15, text: "ČR by měla usilovat o zrušení Green Dealu (Zelené dohody pro Evropu)." }
-  ];
+  ], []);
 
-  // Skutečné odpovědi stran z Excel souboru
-  const stranyOdpovedi: StranyOdpovedi = {
+  // Skutečné odpovědi stran z Excel souboru - zabaleno do useMemo
+  const stranyOdpovedi = useMemo<StranyOdpovedi>(() => ({
     "Přísaha": [3, 1, 4, 4, 2, 3, 1, 1, 2, 3, 1, 4, 4, 4, 1],
     "Piráti": [4, 1, 2, 1, 2, 2, 2, 1, 4, 2, 4, 1, 4, 2, 3],
     "SPD": [1, 4, 4, 4, 4, 4, 1, 1, 1, 4, 1, 4, 1, 3, 1],
@@ -64,15 +72,15 @@ const VolebniKalkulacka = () => {
     "SocDem": [4, 4, 1, 1, 2, 1, 1, 1, 3, 2, 3, 3, 4, 4, 3],
     "Spolu": [4, 1, 3, 3, 3, 3, 3, 3, 3, 2, 4, 2, 4, 2, 2],
     "ANO": [3, 2, 3, 4, 4, 4, 3, 2, 2, 3, 1, 3, 4, 3, 2]
-  };
+  }), []);
 
-  // Bodová matice podle Excel souboru
-  const bodovaMatice: Record<number, Record<number, number>> = {
+  // Bodová matice podle Excel souboru - zabaleno do useMemo
+  const bodovaMatice = useMemo<Record<number, Record<number, number>>>(() => ({
     1: { 1: 10, 2: 7.5, 3: -7.5, 4: -10 },
     2: { 1: 7.5, 2: 10, 3: -5, 4: -7.5 },
     3: { 1: -7.5, 2: -5, 3: 10, 4: 7.5 },
     4: { 1: -10, 2: -7.5, 3: 7.5, 4: 10 }
-  };
+  }), []);
 
   const moznostiOdpovedi: MoznostOdpovedi[] = [
     { value: 1, label: "Rozhodně ano" },
@@ -91,6 +99,9 @@ const VolebniKalkulacka = () => {
   
   // Reference pro hlavní container
   const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Reference pro sledování, zda byla data již odeslána
+  const dataOdeslana = useRef<boolean>(false);
 
   // State pro tooltip
   const [activeTooltip, setActiveTooltip] = useState<number | null>(null);
@@ -126,7 +137,8 @@ const VolebniKalkulacka = () => {
     handleOdpoved(otazkaId, hodnota[0] + 1); // +1 protože slider je 0-3, ale odpovědi jsou 1-4
   };
 
-  const vypocitejShodu = (stranaOdpovedi: number[]): number => {
+  // Funkce pro výpočet shody - zabaleno do useCallback
+  const vypocitejShodu = useCallback((stranaOdpovedi: number[]): number => {
     let kladneBody = 0;
     let zaporneBody = 0;
     let pocetDulezitych = 0;
@@ -166,7 +178,7 @@ const VolebniKalkulacka = () => {
     const shoda = ((kladneBody - zaporneBody) / (maxBody * 2) + 0.5) * 100;
     
     return Math.max(0, Math.min(100, Math.round(shoda)));
-  };
+  }, [odpovedi, zasadniOtazky, bodovaMatice, otazky]);
 
   // Funkce pro odeslání anonymních dat
   const odesliAnonymniData = useCallback(async () => {
@@ -200,9 +212,16 @@ const VolebniKalkulacka = () => {
   }, [odpovedi, zasadniOtazky, stranyOdpovedi, vypocitejShodu]);
 
   useEffect(() => {
-    // Odešleme anonymní data při zobrazení výsledků
+    // Odešleme anonymní data pouze jednou při prvním zobrazení výsledků
     if (zobrazitVysledky) {
-      odesliAnonymniData();
+      // Použijeme ref pro sledování, zda už byla data odeslána
+      if (!dataOdeslana.current) {
+        odesliAnonymniData();
+        dataOdeslana.current = true;
+      }
+    } else {
+      // Reset při novém vyplnění kalkulačky
+      dataOdeslana.current = false;
     }
   }, [zobrazitVysledky, odesliAnonymniData]);
 
@@ -217,9 +236,10 @@ const VolebniKalkulacka = () => {
   const progress = (aktivniOtazka / (otazky.length - 1)) * 100;
 
   const stahnoutVysledek = () => {
+    // Pevná velikost obrázku
     const canvas = document.createElement('canvas');
-    canvas.width = 800;
-    canvas.height = 700;
+    canvas.width = 1080;
+    canvas.height = 1350;
     const ctx = canvas.getContext('2d');
     
     if (!ctx) return; // Kontrola, zda je ctx definováno
@@ -229,67 +249,78 @@ const VolebniKalkulacka = () => {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Logo/hlavička
-    ctx.fillStyle = '#1e293b';
-    ctx.fillRect(0, 0, canvas.width, 100);
+    const headerGradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+    headerGradient.addColorStop(0, '#2563eb'); // from-blue-600
+    headerGradient.addColorStop(1, '#4f46e5'); // to-indigo-600
+    
+    ctx.fillStyle = headerGradient;
+    ctx.fillRect(0, 0, canvas.width, 150);
     
     // Nadpis
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 32px Arial';
+    ctx.font = 'bold 48px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('Volební kalkulačka 2025', 400, 45);
+    ctx.fillText('Volební kalkulačka 2025', canvas.width / 2, 70);
     
-    ctx.font = '18px Arial';
-    ctx.fillText('Moje výsledky', 400, 75);
+    ctx.font = '24px Arial';
+    ctx.fillText('Moje výsledky', canvas.width / 2, 110);
 
     // Datum
     ctx.fillStyle = '#6b7280';
-    ctx.font = '14px Arial';
+    ctx.font = '18px Arial';
     ctx.textAlign = 'right';
     const datum = new Date().toLocaleDateString('cs-CZ');
-    ctx.fillText(`Vyplněno: ${datum}`, 750, 130);
+    ctx.fillText(`Vyplněno: ${datum}`, canvas.width - 50, 200);
 
     // Výsledky
     ctx.textAlign = 'left';
-    vysledky.forEach((vysledek, index) => {
-      const y = 180 + (index * 70);
+    const stranyKZobrazit = zobrazitVsechnyStrany ? vysledky : vysledky.slice(0, 10);
+    
+    stranyKZobrazit.forEach((vysledek, index) => {
+      const y = 280 + (index * 80); // Větší mezera mezi řádky pro lepší čitelnost
       
       // Pozadí pro každý výsledek
-      if (index < 10) { // Zobrazíme max 10 stran
-        ctx.fillStyle = index === 0 ? '#dbeafe' : '#f3f4f6';
-        ctx.fillRect(50, y - 30, 700, 60);
-        
-        // Pořadí
-        ctx.fillStyle = index === 0 ? '#1e40af' : '#6b7280';
-        ctx.font = 'bold 24px Arial';
-        ctx.fillText(`${index + 1}.`, 70, y);
-        
-        // Název strany
-        ctx.fillStyle = '#1f2937';
-        ctx.font = '20px Arial';
-        ctx.fillText(vysledek.strana, 110, y);
-        
-        // Procenta shody
-        ctx.font = 'bold 28px Arial';
-        ctx.textAlign = 'right';
-        ctx.fillStyle = index === 0 ? '#1e40af' : '#6b7280';
-        ctx.fillText(`${vysledek.shoda}%`, 650, y);
-        
-        // Text "shoda"
-        ctx.font = '14px Arial';
-        ctx.fillStyle = '#6b7280';
-        ctx.fillText('shoda', 700, y);
-        
-        ctx.textAlign = 'left';
+      ctx.fillStyle = index === 0 ? '#dbeafe' : (index % 2 === 0 ? '#f9fafb' : '#f3f4f6');
+      ctx.fillRect(50, y - 40, canvas.width - 100, 70);
+      
+      if (index === 0) {
+        // Zvýraznění prvního místa
+        ctx.strokeStyle = '#3b82f6';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(50, y - 40, canvas.width - 100, 70);
       }
+      
+      // Pořadí
+      ctx.fillStyle = index === 0 ? '#1e40af' : '#6b7280';
+      ctx.font = 'bold 32px Arial';
+      ctx.fillText(`${index + 1}.`, 80, y + 5);
+      
+      // Název strany
+      ctx.fillStyle = index === 0 ? '#1e3a8a' : '#1f2937';
+      ctx.font = index === 0 ? 'bold 32px Arial' : '28px Arial';
+      ctx.fillText(vysledek.strana, 140, y + 5);
+      
+      // Procenta shody
+      ctx.font = 'bold 36px Arial';
+      ctx.textAlign = 'right';
+      ctx.fillStyle = index === 0 ? '#1e40af' : '#6b7280';
+      ctx.fillText(`${vysledek.shoda}%`, canvas.width - 150, y + 5);
+      
+      // Text "shoda"
+      ctx.font = '18px Arial';
+      ctx.fillStyle = '#6b7280';
+      ctx.fillText('shoda', canvas.width - 80, y + 5);
+      
+      ctx.textAlign = 'left';
     });
 
     // Patička
-    ctx.fillStyle = '#e5e7eb';
-    ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
+    ctx.fillStyle = '#f3f4f6';
+    ctx.fillRect(0, canvas.height - 60, canvas.width, 60);
     ctx.fillStyle = '#6b7280';
-    ctx.font = '12px Arial';
+    ctx.font = '16px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('www.novinky.cz | Volební kalkulačka', 400, canvas.height - 15);
+    ctx.fillText('www.novinky.cz | Volební kalkulačka', canvas.width / 2, canvas.height - 25);
 
     // Stažení
     canvas.toBlob((blob) => {
@@ -311,6 +342,7 @@ const VolebniKalkulacka = () => {
     setZobrazitOdpovediStran(false);
     setZobrazitVsechnyStrany(false);
     setAktivniOtazka(0);
+    dataOdeslana.current = false; // Reset příznaku odeslání dat
   };
 
   const dalsiOtazka = () => {
@@ -517,6 +549,16 @@ const VolebniKalkulacka = () => {
                         className="w-full mt-2 text-blue-600 hover:text-blue-700"
                       >
                         Zobrazit více stran
+                      </Button>
+                    )}
+                    
+                    {zobrazitVsechnyStrany && vysledky.length > 5 && (
+                      <Button
+                        onClick={() => setZobrazitVsechnyStrany(false)}
+                        variant="outline"
+                        className="w-full mt-2 text-blue-600 hover:text-blue-700"
+                      >
+                        Zobrazit pouze top 5 stran
                       </Button>
                     )}
                 </div>
