@@ -1,3 +1,5 @@
+"use client";
+
 import dynamic from 'next/dynamic';
 
 // Dynamický import komponenty s vypnutím SSR
