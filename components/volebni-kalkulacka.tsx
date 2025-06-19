@@ -92,6 +92,10 @@ const VolebniKalkulacka = () => {
   // Reference pro hlavní container
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // State pro tooltip
+  const [activeTooltip, setActiveTooltip] = useState<number | null>(null);
+  const tooltipTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const handleOdpoved = (otazkaId: number, hodnota: number) => {
     setOdpovedi(prev => ({ ...prev, [otazkaId]: hodnota }));
   };
@@ -117,6 +121,7 @@ const VolebniKalkulacka = () => {
   };
 
   // Funkce pro slider - převede hodnotu slideru (0-3) na hodnotu odpovědi (1-4)
+  // Tato funkce již není potřeba, ale necháme ji zde pro kompatibilitu
   const handleSliderChange = (otazkaId: number, hodnota: number[]) => {
     handleOdpoved(otazkaId, hodnota[0] + 1); // +1 protože slider je 0-3, ale odpovědi jsou 1-4
   };
@@ -329,8 +334,27 @@ const VolebniKalkulacka = () => {
 
   // Převádí hodnotu odpovědi (1-4) na hodnotu slideru (0-3)
   // Pokud odpověď není vybrána, vrátí undefined místo defaultní hodnoty
+  // Tato funkce již není potřeba, ale necháme ji zde pro kompatibilitu
   const odpovediToSliderValue = (odpoved: number | undefined): number[] | undefined => {
     return odpoved ? [odpoved - 1] : undefined;
+  };
+
+  // Funkce pro zobrazení tooltipu
+  const showTooltip = (otazkaId: number) => {
+    if (tooltipTimeoutRef.current) {
+      clearTimeout(tooltipTimeoutRef.current);
+    }
+    setActiveTooltip(otazkaId);
+  };
+
+  // Funkce pro skrytí tooltipu s malým zpožděním
+  const hideTooltip = () => {
+    if (tooltipTimeoutRef.current) {
+      clearTimeout(tooltipTimeoutRef.current);
+    }
+    tooltipTimeoutRef.current = setTimeout(() => {
+      setActiveTooltip(null);
+    }, 300);
   };
 
   return (
@@ -339,9 +363,9 @@ const VolebniKalkulacka = () => {
       ref={containerRef} 
       style={{ 
         width: '800px', 
-        height: '600px', 
+        height: '700px',
         margin: '0 auto',
-        overflow: 'hidden',
+        overflow: 'auto',
         position: 'relative',
         borderRadius: '8px',
         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)'
@@ -353,9 +377,9 @@ const VolebniKalkulacka = () => {
           <p className="text-sm text-blue-100">Porovnejte své politické postoje s programy hlavních politických stran</p>
         </header>
 
-        <main className="flex-grow p-6 overflow-hidden">
+        <main className="flex-grow p-6 overflow-auto">
           {!zobrazitVysledky ? (
-            <div className="h-full flex flex-col">
+            <div className="flex flex-col">
               <div className="mb-4">
                 <div className="flex justify-between items-center mb-1 text-xs text-gray-500 font-medium">
                   <span>Otázka {aktivniOtazka + 1} z {otazky.length}</span>
@@ -375,50 +399,30 @@ const VolebniKalkulacka = () => {
                   </div>
                 </div>
                 
-                <div className="space-y-8 flex-grow">
+                <div className="space-y-8" style={{ minHeight: '200px' }}>
                   {/* Slider a textové odpovědi */}
                   <div className="mt-6">
-                    <div className="px-2 flex justify-between text-sm text-gray-600 mb-2">
-                      {moznostiOdpovedi.map((moznost, index) => (
-                        <span 
-                          key={moznost.value} 
-                          className={`font-medium cursor-pointer transition-colors ${
-                            odpovedi[otazky[aktivniOtazka].id] === moznost.value 
-                              ? index < 2 ? 'text-green-600 font-bold' : 'text-red-600 font-bold' 
-                              : index < 2 ? 'text-green-500 hover:text-green-600' : 'text-red-500 hover:text-red-600'
-                          }`}
+                    <div className="flex flex-col gap-2">
+                      {moznostiOdpovedi.map((moznost) => (
+                        <button
+                          key={moznost.value}
                           onClick={() => handleOdpoved(otazky[aktivniOtazka].id, moznost.value)}
+                          className={`w-full py-3 px-4 text-left rounded-md transition-all border ${
+                            odpovedi[otazky[aktivniOtazka].id] === moznost.value
+                            ? moznost.value <= 2
+                              ? 'bg-green-100 border-green-500 text-green-800'
+                              : 'bg-red-100 border-red-500 text-red-800'
+                            : 'border-gray-300 hover:border-gray-400'
+                          }`}
                         >
-                          {moznost.label}
-                        </span>
+                          <span className="font-medium">{moznost.label}</span>
+                        </button>
                       ))}
-                    </div>
-                    
-                    <Slider 
-                      value={odpovediToSliderValue(odpovedi[otazky[aktivniOtazka].id])}
-                      min={0}
-                      max={3}
-                      step={1}
-                      onValueChange={(value) => handleSliderChange(otazky[aktivniOtazka].id, value)}
-                      className="mt-2"
-                      aria-label="Vyberte odpověď"
-                    />
-                    
-                    <div className="mt-2 text-center">
-                      {odpovedi[otazky[aktivniOtazka].id] ? (
-                        <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                          {getOdpovedLabel(odpovedi[otazky[aktivniOtazka].id])}
-                        </span>
-                      ) : (
-                        <span className="inline-block px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-sm font-medium">
-                          Prosím vyberte odpověď
-                        </span>
-                      )}
                     </div>
                   </div>
                   
                   {/* Checkbox pro zásadní otázky */}
-                  <div className="mt-auto pt-4 border-t">
+                  <div className="pt-4 border-t">
                     <div className="flex items-center space-x-2">
                       <Checkbox
                         id={`zasadni-${otazky[aktivniOtazka].id}`}
@@ -446,24 +450,24 @@ const VolebniKalkulacka = () => {
                 </div>
               </div>
               
-              {/* Navigační tlačítka */}
-              <div className="mt-6 flex justify-between">
+              {/* Navigační tlačítka - výraznější */}
+              <div className="mt-8 flex justify-between border-t pt-6 sticky bottom-0 bg-white">
                 <Button
                   onClick={predchoziOtazka}
                   disabled={aktivniOtazka === 0}
                   variant="outline"
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1 px-6 py-3 text-base border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 min-w-[120px]"
                 >
-                  <ChevronLeft className="w-4 h-4" /> Zpět
+                  <ChevronLeft className="w-5 h-5" /> Zpět
                 </Button>
                 
                 <Button
                   onClick={dalsiOtazka}
                   disabled={!odpovedi[otazky[aktivniOtazka].id]}
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1 px-6 py-3 text-base bg-blue-600 hover:bg-blue-700 text-white font-medium min-w-[120px] justify-center"
                 >
                   {aktivniOtazka === otazky.length - 1 ? 'Zobrazit výsledky' : 'Další'}
-                  {aktivniOtazka !== otazky.length - 1 && <ChevronRight className="w-4 h-4" />}
+                  {aktivniOtazka !== otazky.length - 1 && <ChevronRight className="w-5 h-5" />}
                 </Button>
               </div>
             </div>
@@ -566,8 +570,39 @@ const VolebniKalkulacka = () => {
                         <tbody>
                           {otazky.map((otazka, index) => (
                             <tr key={otazka.id} className="border-b hover:bg-gray-50 transition-colors">
-                              <td className="p-2">
-                                <span className="font-semibold text-gray-600">{otazka.id}.</span>
+                              <td className="p-2 relative">
+                                <span 
+                                  className="font-semibold text-gray-600 cursor-help border-b border-dotted border-gray-400"
+                                  onMouseEnter={() => showTooltip(otazka.id)}
+                                  onMouseLeave={hideTooltip}
+                                >
+                                  {otazka.id}.
+                                </span>
+                                {activeTooltip === otazka.id && (
+                                  <div 
+                                    className="absolute z-50 bg-gray-900 text-white p-2 rounded-md shadow-lg max-w-xs text-xs"
+                                    style={{ 
+                                      top: '50%',
+                                      left: '100%',
+                                      transform: 'translateY(-50%)',
+                                      marginLeft: '5px',
+                                      width: 'max-content',
+                                      maxWidth: '250px'
+                                    }}
+                                    onMouseEnter={() => showTooltip(otazka.id)}
+                                    onMouseLeave={hideTooltip}
+                                  >
+                                    {otazka.text}
+                                    <div 
+                                      className="absolute w-2 h-2 bg-gray-900 transform rotate-45"
+                                      style={{
+                                        left: '-3px',
+                                        top: '50%',
+                                        transform: 'translateY(-50%)'
+                                      }}
+                                    ></div>
+                                  </div>
+                                )}
                               </td>
                               {Object.entries(stranyOdpovedi).map(([strana, odpovedi]) => {
                                 const odpoved = odpovedi[index];
