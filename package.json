@@ -1,23 +1,24 @@
 {
-  "name": "kalkulacka-nms-preact",
+  "name": "volebni-kalkulacka-nms",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
-    "autoprefixer": "^10.4.21",
-    "lucide-preact": "^0.518.0",
-    "postcss": "^8.5.6",
-    "preact": "^10.26.5",
-    "tailwindcss": "^4.1.10"
+    "lucide-preact": "^0.358.0",
+    "preact": "^10.19.6"
   },
   "devDependencies": {
-    "@preact/preset-vite": "^2.10.1",
-    "typescript": "~5.8.3",
-    "vite": "^6.3.5"
+    "@preact/preset-vite": "^2.8.1",
+    "@tailwindcss/postcss": "^4.1.10",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.10",
+    "typescript": "^5.2.2",
+    "vite": "^5.1.4"
   }
 }

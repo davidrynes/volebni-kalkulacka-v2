@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volební kalkulačka 2025</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background-color: transparent;
+            color: #1a1a1a;
+            line-height: 1.6;
+            overflow: hidden;
+        }
+
+        .kalkulacka-container {
+            width: 600px; /* Fixní šířka */
+            height: 700px; /* Fixní výška */
+            background: white;
+            position: relative;
+            overflow-y: auto; /* Přidáno pro scrollování obsahu */
+            overflow-x: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        /* Header */
+        .header {
+            background: #c8102e;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* Progress */
+        .progress-container {
+            padding: 20px;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            position: sticky;
+            top: 60px;
+            z-index: 9;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #c8102e;
+            transition: width 0.3s ease;
+        }
+
+        /* Question Slide */
+        .question-slide {
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            min-height: 400px;
+        }
+
+        .question-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: #c8102e;
+            color: white;
+            border-radius: 50%;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .question-text {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 30px;
+            line-height: 1.4;
+        }
+
+        /* Radio Options */
+        .options-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .option-label {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            background: #f8f8f8;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 16px;
+        }
+
+        .option-label:hover {
+            border-color: #c8102e;
+            background: #fff5f5;
+        }
+
+        .option-label.selected {
+            background: #fff5f5;
+            border-color: #c8102e;
+            font-weight: 600;
+        }
+
+        .option-label input[type="radio"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            accent-color: #c8102e;
+        }
+
+        /* Important Question Checkbox */
+        .important-container {
+            padding: 16px 20px;
+            background: #fef3c7;
+            border: 2px solid #fbbf24;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .important-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-size: 14px;
+            color: #92400e;
+        }
+
+        .important-label input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+            accent-color: #f59e0b;
+        }
+
+        /* Navigation */
+        .navigation {
+            display: flex;
+            gap: 12px;
+            padding: 0 20px 30px;
+            justify-content: space-between;
+        }
+
+        .nav-button {
+            flex: 1;
+            padding: 14px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .nav-button.back {
+            background: #e0e0e0;
+            color: #666;
+        }
+
+        .nav-button.back:hover:not(:disabled) {
+            background: #d0d0d0;
+        }
+
+        .nav-button.next {
+            background: #c8102e;
+            color: white;
+        }
+
+        .nav-button.next:hover:not(:disabled) {
+            background: #a00824;
+        }
+
+        .nav-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Results */
+        .results-container {
+            padding: 30px 20px;
+        }
+
+        .results-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .results-header h2 {
+            font-size: 28px;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+        }
+
+        .party-result {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            background: #f8f8f8;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .party-result.top {
+            background: #c8102e;
+            color: white;
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(200, 16, 46, 0.3);
+        }
+
+        .party-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .party-rank {
+            font-size: 24px;
+            font-weight: bold;
+            color: #666;
+        }
+
+        .party-result.top .party-rank {
+            color: white;
+        }
+
+        .party-name {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .party-score {
+            text-align: right;
+        }
+
+        .score-number {
+            font-size: 32px;
+            font-weight: bold;
+            line-height: 1;
+        }
+
+        .score-label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .party-result.top .score-label {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 30px 20px;
+        }
+
+        .action-button {
+            padding: 14px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .action-button.primary {
+            background: #c8102e;
+            color: white;
+        }
+
+        .action-button.primary:hover {
+            background: #a00824;
+        }
+
+        .action-button.secondary {
+            background: white;
+            color: #c8102e;
+            border: 2px solid #c8102e;
+        }
+
+        .action-button.secondary:hover {
+            background: #fff5f5;
+        }
+
+        /* Party Answers Table */
+        .party-answers {
+            padding: 20px;
+            background: white;
+            margin-top: 20px;
+        }
+
+        .party-answers h3 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+        }
+
+        .answers-table {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .answers-table table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .answers-table th,
+        .answers-table td {
+            padding: 8px;
+            text-align: center;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .answers-table th {
+            background: #f8f8f8;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+
+        .answer-dot {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .answer-yes-strong { background: #16a34a; color: white; }
+        .answer-yes { background: #86efac; color: #14532d; }
+        .answer-no { background: #fca5a5; color: #7f1d1d; }
+        .answer-no-strong { background: #dc2626; color: white; }
+
+        /* Footer */
+        .footer {
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            background: #f8f8f8;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        /* Hidden by default */
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Question View -->
+        <div id="questionView" class="kalkulacka-container">
+            <div class="header">
+                <h1>Volební kalkulačka 2025</h1>
+                <p>Porovnejte své názory s politickými stranami</p>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-info">
+                    <span id="questionInfo"></span>
+                    <span id="answeredInfo"></span>
+                </div>
+                <div class="progress-bar">
+                    <div id="progressFill" class="progress-fill"></div>
+                </div>
+            </div>
+            
+            <div class="question-slide">
+                <div id="questionNumber" class="question-number"></div>
+                <h2 id="questionText" class="question-text"></h2>
+                
+                <div id="optionsContainer" class="options-container"></div>
+                
+                <div class="important-container">
+                    <label class="important-label">
+                        <input type="checkbox" id="importantCheckbox" />
+                        Tato otázka je pro mě zásadní (dvojnásobná váha)
+                    </label>
+                </div>
+            </div>
+            
+            <div class="navigation">
+                <button id="prevButton" class="nav-button back">Zpět</button>
+                <button id="nextButton" class="nav-button next">Další</button>
+            </div>
+        </div>
+
+        <!-- Results View -->
+        <div id="resultsView" class="kalkulacka-container hidden">
+            <div class="header">
+                <h1>Volební kalkulačka 2025</h1>
+                <p>Vaše výsledky</p>
+            </div>
+            
+            <div class="results-container">
+                <div class="results-header">
+                    <h2>Míra shody s politickými stranami</h2>
+                    <p>Na základě vašich odpovědí</p>
+                </div>
+                
+                <div id="resultsContainer"></div>
+            </div>
+            
+            <div class="action-buttons">
+                <button id="downloadButton" class="action-button primary">Stáhnout výsledky</button>
+                <button id="showAnswersButton" class="action-button secondary">Zobrazit odpovědi stran</button>
+                <button id="resetButton" class="action-button secondary">Vyplnit znovu</button>
+            </div>
+            
+            <div id="partyAnswersContainer" class="hidden"></div>
+            
+            <div class="footer">
+                <p>Volební kalkulačka je nezávislá aplikace vytvořená ve spolupráci Novinky.cz a NMS.</p>
+                <p>Výsledky neslouží jako doporučení, koho volit.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data
+        const otazky = [
+            { id: 1, text: "ČR by měla zastavit dodávku zbraní Ukrajině." },
+            { id: 2, text: "Vláda by v letech 2026-2030 měla postupně navýšit výdaje na obranu nejméně na 3 % HDP." },
+            { id: 3, text: "Zdanění prázdných a investičních bytů by se mělo zvýšit." },
+            { id: 4, text: "Daňová výjimka pro tichá vína a cidery by měla být zrušena." },
+            { id: 5, text: "Zrušení superhrubé mzdy, které snížilo zdanění zaměstnanců, si státní rozpočet nemůže dovolit." },
+            { id: 6, text: "Progresivní zdanění příjmů by mělo být rozšířeno." },
+            { id: 7, text: "Nadnárodní korporace by měly být v ČR mnohem více zdaněny." },
+            { id: 8, text: "Minimální mzda by měla být vyšší." },
+            { id: 9, text: "ČR by měla odložit plánovaný odchod od uhlí." },
+            { id: 10, text: "Zvýšení legální migrace je zásadní pro český trh práce a ekonomický růst." },
+            { id: 11, text: "Česká televize a Český rozhlas by se měly sloučit a být financovány přímo ze státního rozpočtu, nikoli z koncesionářských poplatků." },
+            { id: 12, text: "ČR by měla do roku 2030 přijmout jednotnou evropskou měnu (Euro)." },
+            { id: 13, text: "Mělo by být vypsáno referendum o vystoupení ČR z EU." },
+            { id: 14, text: "Pacienti by měli mít možnost připlatit si za nadstandardní zdravotní péči v nemocnicích." },
+            { id: 15, text: "ČR by měla usilovat o zrušení Green Dealu (Zelené dohody pro Evropu)." }
+        ];
+
+        const stranyOdpovedi = {
+            "Přísaha": [3, 1, 4, 4, 2, 3, 1, 1, 2, 3, 1, 4, 4, 4, 1],
+            "Piráti": [4, 1, 2, 1, 2, 2, 2, 1, 4, 2, 4, 1, 4, 2, 3],
+            "SPD": [1, 4, 4, 4, 4, 4, 1, 1, 1, 4, 1, 4, 1, 3, 1],
+            "Zelení": [4, 2, 1, 1, 1, 2, 1, 1, 4, 1, 4, 1, 4, 4, 4],
+            "STAN": [4, 1, 2, 1, 1, 1, 4, 3, 4, 2, 4, 1, 4, 1, 4],
+            "Stačilo!": [1, 4, 2, 2, 3, 1, 1, 1, 1, 4, 1, 4, 1, 4, 1],
+            "Motoristé": [3, 2, 4, 3, 4, 4, 4, 3, 1, 3, 3, 4, 4, 1, 1],
+            "SocDem": [4, 4, 1, 1, 2, 1, 1, 1, 3, 2, 3, 3, 4, 4, 3],
+            "Spolu": [4, 1, 3, 3, 3, 3, 3, 3, 3, 2, 4, 2, 4, 2, 2],
+            "ANO": [3, 2, 3, 4, 4, 4, 3, 2, 2, 3, 1, 3, 4, 3, 2]
+        };
+
+        const bodovaMatice = {
+            1: { 1: 10, 2: 7.5, 3: -7.5, 4: -10 },
+            2: { 1: 7.5, 2: 10, 3: -5, 4: -7.5 },
+            3: { 1: -7.5, 2: -5, 3: 10, 4: 7.5 },
+            4: { 1: -10, 2: -7.5, 3: 7.5, 4: 10 }
+        };
+
+        const moznostiOdpovedi = [
+            { value: 1, label: "Rozhodně ano" },
+            { value: 2, label: "Spíše ano" },
+            { value: 3, label: "Spíše ne" },
+            { value: 4, label: "Rozhodně ne" }
+        ];
+
+        // State
+        let currentQuestion = 0;
+        let odpovedi = {};
+        let zasadniOtazky = new Set();
+
+        // Elements
+        const questionView = document.getElementById('questionView');
+        const resultsView = document.getElementById('resultsView');
+        const questionInfo = document.getElementById('questionInfo');
+        const answeredInfo = document.getElementById('answeredInfo');
+        const progressFill = document.getElementById('progressFill');
+        const questionNumber = document.getElementById('questionNumber');
+        const questionText = document.getElementById('questionText');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const importantCheckbox = document.getElementById('importantCheckbox');
+        const prevButton = document.getElementById('prevButton');
+        const nextButton = document.getElementById('nextButton');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const downloadButton = document.getElementById('downloadButton');
+        const showAnswersButton = document.getElementById('showAnswersButton');
+        const resetButton = document.getElementById('resetButton');
+        const partyAnswersContainer = document.getElementById('partyAnswersContainer');
+
+        // Functions
+        function updateQuestion() {
+            const question = otazky[currentQuestion];
+            questionInfo.textContent = `Otázka ${currentQuestion + 1} z ${otazky.length}`;
+            answeredInfo.textContent = `Zodpovězeno: ${Object.keys(odpovedi).length}`;
+            
+            const progress = (Object.keys(odpovedi).length / otazky.length) * 100;
+            progressFill.style.width = `${progress}%`;
+            
+            questionNumber.textContent = question.id;
+            questionText.textContent = question.text;
+            
+            // Update options
+            optionsContainer.innerHTML = '';
+            moznostiOdpovedi.forEach(option => {
+                const label = document.createElement('label');
+                label.className = `option-label ${odpovedi[question.id] === option.value ? 'selected' : ''}`;
+                
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.name = `question-${question.id}`;
+                input.value = option.value;
+                input.checked = odpovedi[question.id] === option.value;
+                input.onchange = () => handleAnswer(question.id, option.value);
+                
+                label.appendChild(input);
+                label.appendChild(document.createTextNode(option.label));
+                optionsContainer.appendChild(label);
+            });
+            
+            // Update important checkbox
+            importantCheckbox.checked = zasadniOtazky.has(question.id);
+            importantCheckbox.onchange = () => handleImportant(question.id);
+            
+            // Update buttons
+            prevButton.disabled = currentQuestion === 0;
+            nextButton.disabled = !odpovedi[question.id];
+            nextButton.textContent = currentQuestion === otazky.length - 1 ? 'Zobrazit výsledky' : 'Další';
+        }
+
+        function handleAnswer(questionId, value) {
+            odpovedi[questionId] = value;
+            updateQuestion();
+        }
+
+        function handleImportant(questionId) {
+            if (zasadniOtazky.has(questionId)) {
+                zasadniOtazky.delete(questionId);
+            } else {
+                zasadniOtazky.add(questionId);
+            }
+        }
+
+        function goToNext() {
+            if (currentQuestion < otazky.length - 1) {
+                currentQuestion++;
+                updateQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function goToPrevious() {
+            if (currentQuestion > 0) {
+                currentQuestion--;
+                updateQuestion();
+            }
+        }
+
+        function calculateMatch(partyAnswers) {
+            let positivePoints = 0;
+            let negativePoints = 0;
+            let importantCount = 0;
+            let answeredCount = 0;
+
+            otazky.forEach((question, index) => {
+                const userAnswer = odpovedi[question.id];
+                const partyAnswer = partyAnswers[index];
+                
+                if (userAnswer) {
+                    answeredCount++;
+                    const weight = zasadniOtazky.has(question.id) ? 2 : 1;
+                    if (zasadniOtazky.has(question.id)) {
+                        importantCount++;
+                    }
+                    
+                    const points = bodovaMatice[userAnswer][partyAnswer] * weight;
+                    
+                    if (points > 0) {
+                        positivePoints += points;
+                    } else {
+                        negativePoints += Math.abs(points);
+                    }
+                }
+            });
+
+            if (answeredCount === 0) return 50;
+
+            const maxPoints = (answeredCount * 10) + (importantCount * 10);
+            const match = ((positivePoints - negativePoints) / (maxPoints * 2) + 0.5) * 100;
+            
+            return Math.max(0, Math.min(100, Math.round(match)));
+        }
+
+        function showResults() {
+            const results = Object.entries(stranyOdpovedi)
+                .map(([party, answers]) => ({
+                    party,
+                    score: calculateMatch(answers)
+                }))
+                .sort((a, b) => b.score - a.score);
+
+            // Hide question view, show results
+            questionView.classList.add('hidden');
+            resultsView.classList.remove('hidden');
+
+            // Display results
+            resultsContainer.innerHTML = '';
+            results.forEach((result, index) => {
+                const div = document.createElement('div');
+                div.className = `party-result ${index === 0 ? 'top' : ''}`;
+                div.innerHTML = `
+                    <div class="party-info">
+                        <span class="party-rank">${index + 1}.</span>
+                        <span class="party-name">${result.party}</span>
+                    </div>
+                    <div class="party-score">
+                        <div class="score-number">${result.score}%</div>
+                        <div class="score-label">shoda</div>
+                    </div>
+                `;
+                resultsContainer.appendChild(div);
+            });
+        }
+
+        function downloadResults() {
+            const results = Object.entries(stranyOdpovedi)
+                .map(([party, answers]) => ({
+                    party,
+                    score: calculateMatch(answers)
+                }))
+                .sort((a, b) => b.score - a.score);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = 800;
+            canvas.height = 700;
+            const ctx = canvas.getContext('2d');
+
+            // Background
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Header
+            ctx.fillStyle = '#c8102e';
+            ctx.fillRect(0, 0, canvas.width, 100);
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 32px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Volební kalkulačka 2025', 400, 45);
+            
+            ctx.font = '18px Arial';
+            ctx.fillText('Moje výsledky', 400, 75);
+
+            // Date
+            ctx.fillStyle = '#666666';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'right';
+            const date = new Date().toLocaleDateString('cs-CZ');
+            ctx.fillText(`Vyplněno: ${date}`, 750, 130);
+
+            // Results
+            ctx.textAlign = 'left';
+            results.slice(0, 10).forEach((result, index) => {
+                const y = 180 + (index * 60);
+                
+                // Background
+                ctx.fillStyle = index === 0 ? '#ffe4e6' : '#f3f4f6';
+                ctx.fillRect(50, y - 25, 700, 50);
+                
+                // Rank
+                ctx.fillStyle = index === 0 ? '#c8102e' : '#666666';
+                ctx.font = 'bold 24px Arial';
+                ctx.fillText(`${index + 1}.`, 70, y);
+                
+                // Party name
+                ctx.fillStyle = '#1a1a1a';
+                ctx.font = '20px Arial';
+                ctx.fillText(result.party, 110, y);
+                
+                // Score
+                ctx.font = 'bold 28px Arial';
+                ctx.textAlign = 'right';
+                ctx.fillStyle = index === 0 ? '#c8102e' : '#666666';
+                ctx.fillText(`${result.score}%`, 650, y);
+                
+                ctx.font = '14px Arial';
+                ctx.fillStyle = '#666666';
+                ctx.fillText('shoda', 700, y);
+                
+                ctx.textAlign = 'left';
+            });
+
+            // Footer
+            ctx.fillStyle = '#f8f8f8';
+            ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
+            ctx.fillStyle = '#666666';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('www.novinky.cz | Volební kalkulačka', 400, canvas.height - 15);
+
+            // Download
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `volebni-kalkulacka-${new Date().toISOString().split('T')[0]}.png`;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        function togglePartyAnswers() {
+            const isHidden = partyAnswersContainer.classList.contains('hidden');
+            
+            if (isHidden) {
+                // Generate table
+                let html = `
+                    <div class="party-answers">
+                        <h3>Jak odpovídaly politické strany</h3>
+                        <div class="answers-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Otázka</th>
+                `;
+                
+                Object.keys(stranyOdpovedi).forEach(party => {
+                    html += `<th>${party.substring(0, 3)}</th>`;
+                });
+                
+                html += `
+                                    </tr>
+                                </thead>
+                                <tbody>
+                `;
+                
+                otazky.forEach((question, qIndex) => {
+                    html += `<tr><td>${question.id}</td>`;
+                    
+                    Object.entries(stranyOdpovedi).forEach(([party, answers]) => {
+                        const answer = answers[qIndex];
+                        let className = '';
+                        let symbol = '';
+                        
+                        switch(answer) {
+                            case 1:
+                                className = 'answer-yes-strong';
+                                symbol = '++';
+                                break;
+                            case 2:
+                                className = 'answer-yes';
+                                symbol = '+';
+                                break;
+                            case 3:
+                                className = 'answer-no';
+                                symbol = '-';
+                                break;
+                            case 4:
+                                className = 'answer-no-strong';
+                                symbol = '--';
+                                break;
+                        }
+                        
+                        html += `<td><span class="answer-dot ${className}">${symbol}</span></td>`;
+                    });
+                    
+                    html += `</tr>`;
+                });
+                
+                html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+                
+                partyAnswersContainer.innerHTML = html;
+                partyAnswersContainer.classList.remove('hidden');
+                showAnswersButton.textContent = 'Skrýt odpovědi stran';
+            } else {
+                partyAnswersContainer.classList.add('hidden');
+                showAnswersButton.textContent = 'Zobrazit odpovědi stran';
+            }
+        }
+
+        function reset() {
+            currentQuestion = 0;
+            odpovedi = {};
+            zasadniOtazky = new Set();
+            
+            resultsView.classList.add('hidden');
+            questionView.classList.remove('hidden');
+            partyAnswersContainer.classList.add('hidden');
+            showAnswersButton.textContent = 'Zobrazit odpovědi stran';
+            
+            updateQuestion();
+        }
+
+        // Event listeners
+        prevButton.onclick = goToPrevious;
+        nextButton.onclick = goToNext;
+        downloadButton.onclick = downloadResults;
+        showAnswersButton.onclick = togglePartyAnswers;
+        resetButton.onclick = reset;
+
+        // Initialize
+        updateQuestion();
+    </script>
+</body>
+</html>

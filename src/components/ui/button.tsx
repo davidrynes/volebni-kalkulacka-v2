@@ -1,8 +1,8 @@
-import { ComponentChildren } from 'preact';
+import { VNode } from 'preact';
 
 interface ButtonProps {
   className?: string;
-  children: ComponentChildren;
+  children?: any;
   variant?: 'default' | 'outline' | 'secondary' | 'ghost' | 'link';
   size?: 'default' | 'sm' | 'lg';
   onClick?: () => void;

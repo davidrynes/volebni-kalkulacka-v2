@@ -1,8 +1,8 @@
-import { ComponentChildren } from 'preact';
+import { VNode } from 'preact';
 
 interface CardProps {
   className?: string;
-  children: ComponentChildren;
+  children?: any;
 }
 
 export function Card({ className, children }: CardProps) {
@@ -15,7 +15,7 @@ export function Card({ className, children }: CardProps) {
 
 interface CardHeaderProps {
   className?: string;
-  children: ComponentChildren;
+  children?: any;
 }
 
 export function CardHeader({ className, children }: CardHeaderProps) {
@@ -28,7 +28,7 @@ export function CardHeader({ className, children }: CardHeaderProps) {
 
 interface CardTitleProps {
   className?: string;
-  children: ComponentChildren;
+  children?: any;
 }
 
 export function CardTitle({ className, children }: CardTitleProps) {
@@ -41,7 +41,7 @@ export function CardTitle({ className, children }: CardTitleProps) {
 
 interface CardDescriptionProps {
   className?: string;
-  children: ComponentChildren;
+  children?: any;
 }
 
 export function CardDescription({ className, children }: CardDescriptionProps) {
@@ -54,7 +54,7 @@ export function CardDescription({ className, children }: CardDescriptionProps) {
 
 interface CardContentProps {
   className?: string;
-  children: ComponentChildren;
+  children?: any;
 }
 
 export function CardContent({ className, children }: CardContentProps) {
@@ -67,7 +67,7 @@ export function CardContent({ className, children }: CardContentProps) {
 
 interface CardFooterProps {
   className?: string;
-  children: ComponentChildren;
+  children?: any;
 }
 
 export function CardFooter({ className, children }: CardFooterProps) {

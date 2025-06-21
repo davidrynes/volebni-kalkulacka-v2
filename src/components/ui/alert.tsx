@@ -1,9 +1,9 @@
-import { ComponentChildren } from 'preact';
+import { VNode } from 'preact';
 
 interface AlertProps {
   className?: string;
   variant?: 'default' | 'destructive';
-  children: ComponentChildren;
+  children?: any;
 }
 
 export function Alert({
@@ -26,7 +26,7 @@ export function Alert({
 
 interface AlertDescriptionProps {
   className?: string;
-  children: ComponentChildren;
+  children?: any;
 }
 
 export function AlertDescription({

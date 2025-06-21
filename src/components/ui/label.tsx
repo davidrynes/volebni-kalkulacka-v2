@@ -1,9 +1,9 @@
-import { ComponentChildren } from 'preact';
+import { VNode } from 'preact';
 
 interface LabelProps {
   htmlFor?: string;
   className?: string;
-  children: ComponentChildren;
+  children?: any;
 }
 
 export function Label({

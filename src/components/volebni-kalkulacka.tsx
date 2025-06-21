@@ -1,11 +1,5 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'preact/hooks';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Label } from './ui/label';
-import { Checkbox } from './ui/checkbox';
-import { Progress } from './ui/progress';
-import { Slider } from './ui/slider';
-import { Alert, AlertDescription } from './ui/alert';
+import { useState, useEffect } from 'preact/hooks';
+import { saveUserData, detectRegion } from '../services/dataService';
 
 // Definice typů
 interface Otazka {
@@ -17,7 +11,7 @@ interface StranyOdpovedi {
   [strana: string]: number[];
 }
 
-type OdpovediUzivatele = Record<number, number>;
+export type OdpovediUzivatele = Record<number, number>;
 
 interface Vysledek {
   strana: string;
@@ -29,520 +23,614 @@ interface MoznostOdpovedi {
   label: string;
 }
 
-const VolebniKalkulacka = () => {
-  // Skutečná data z Excel souboru - zabaleno do useMemo
-  const otazky = useMemo<Otazka[]>(() => [
-    { id: 1, text: "ČR by měla zastavit dodávku zbraní Ukrajině." },
-    { id: 2, text: "Vláda by v letech 2026-2030 měla postupně navýšit výdaje na obranu nejméně na 3 % HDP." },
-    { id: 3, text: "Zdanění prázdných a investičních bytů by se mělo zvýšit." },
-    { id: 4, text: "Daňová výjimka pro tichá vína a cidery by měla být zrušena." },
-    { id: 5, text: "Zrušení superhrubé mzdy, které snížilo zdanění zaměstnanců, si státní rozpočet nemůže dovolit." },
-    { id: 6, text: "Progresivní zdanění příjmů by mělo být rozšířeno." },
-    { id: 7, text: "Nadnárodní korporace by měly být v ČR mnohem více zdaněny." },
-    { id: 8, text: "Minimální mzda by měla být vyšší." },
-    { id: 9, text: "ČR by měla odložit plánovaný odchod od uhlí." },
-    { id: 10, text: "Zvýšení legální migrace je zásadní pro český trh práce a ekonomický růst." },
-    { id: 11, text: "Česká televize a Český rozhlas by se měly sloučit a být financovány přímo ze státního rozpočtu, nikoli z koncesionářských poplatků." },
-    { id: 12, text: "ČR by měla do roku 2030 přijmout jednotnou evropskou měnu (Euro)." },
-    { id: 13, text: "Mělo by být vypsáno referendum o vystoupení ČR z EU." },
-    { id: 14, text: "Pacienti by měli mít možnost připlatit si za nadstandardní zdravotní péči v nemocnicích." },
-    { id: 15, text: "ČR by měla usilovat o zrušení Green Dealu (Zelené dohody pro Evropu)." }
-  ], []);
+interface Props {
+  otazky: Otazka[];
+  odpovedi?: OdpovediUzivatele;
+  stranyOdpovedi: StranyOdpovedi;
+  bodovaMatice: Record<number, Record<number, number>>;
+  onSubmit?: (userAnswers: Record<number, number>, crucialQuestions: number[]) => void;
+}
 
-  // Skutečné odpovědi stran z Excel souboru - zabaleno do useMemo
-  const stranyOdpovedi = useMemo<StranyOdpovedi>(() => ({
-    "Přísaha": [3, 1, 4, 4, 2, 3, 1, 1, 2, 3, 1, 4, 4, 4, 1],
-    "Piráti": [4, 1, 2, 1, 2, 2, 2, 1, 4, 2, 4, 1, 4, 2, 3],
-    "SPD": [1, 4, 4, 4, 4, 4, 1, 1, 1, 4, 1, 4, 1, 3, 1],
-    "Zelení": [4, 2, 1, 1, 1, 2, 1, 1, 4, 1, 4, 1, 4, 4, 4],
-    "STAN": [4, 1, 2, 1, 1, 1, 4, 3, 4, 2, 4, 1, 4, 1, 4],
-    "Stačilo!": [1, 4, 2, 2, 3, 1, 1, 1, 1, 4, 1, 4, 1, 4, 1],
-    "Motoristé": [3, 2, 4, 3, 4, 4, 4, 3, 1, 3, 3, 4, 4, 1, 1],
-    "SocDem": [4, 4, 1, 1, 2, 1, 1, 1, 3, 2, 3, 3, 4, 4, 3],
-    "Spolu": [4, 1, 3, 3, 3, 3, 3, 3, 3, 2, 4, 2, 4, 2, 2],
-    "ANO": [3, 2, 3, 4, 4, 4, 3, 2, 2, 3, 1, 3, 4, 3, 2]
-  }), []);
+// Popisy stran pro výsledky
+const stranyPopis: Record<string, string> = {
+  "Přísaha": "Přísaha je politické hnutí založené bývalým policistou Robertem Šlachtou.",
+  "Piráti": "Česká pirátská strana je liberální politická strana zaměřená na transparentnost a digitalizaci.",
+  "SPD": "SPD je národně konzervativní politická strana vedená Tomiem Okamurou.",
+  "Zelení": "Strana zelených je politická strana zaměřená na ekologii a ochranu životního prostředí.",
+  "STAN": "Starostové a nezávislí je středopravicová politická strana vycházející z komunální politiky.",
+  "Stačilo!": "Stačilo! je levicové politické hnutí vedené Kateřinou Konečnou.",
+  "Motoristé": "Motoristé sobě je politické hnutí zaměřené na práva řidičů a dopravní problematiku.",
+  "SocDem": "Sociální demokracie je levicová politická strana s důrazem na sociální práva.",
+  "Spolu": "SPOLU je koalice stran ODS, KDU-ČSL a TOP 09 s konzervativně-liberální orientací.",
+  "ANO": "Hnutí ANO je centristické politické hnutí založené Andrejem Babišem.",
+};
 
-  // Bodová matice podle Excel souboru - zabaleno do useMemo
-  const bodovaMatice = useMemo<Record<number, Record<number, number>>>(() => ({
-    1: { 1: 10, 2: 7.5, 3: -7.5, 4: -10 },
-    2: { 1: 7.5, 2: 10, 3: -5, 4: -7.5 },
-    3: { 1: -7.5, 2: -5, 3: 10, 4: 7.5 },
-    4: { 1: -10, 2: -7.5, 3: 7.5, 4: 10 }
-  }), []);
+// Barvy stran pro progress bar
+const stranyBarvy: Record<string, string> = {
+  "Přísaha": "#1976d2",
+  "Piráti": "#000000",
+  "SPD": "#1565c0",
+  "Zelení": "#2e7d32",
+  "STAN": "#0288d1",
+  "Stačilo!": "#c62828",
+  "Motoristé": "#795548",
+  "SocDem": "#f57c00",
+  "Spolu": "#1565c0",
+  "ANO": "#29b6f6",
+};
 
-  const moznostiOdpovedi: MoznostOdpovedi[] = [
-    { value: 1, label: "Rozhodně ano" },
-    { value: 2, label: "Spíše ano" },
-    { value: 3, label: "Spíše ne" },
-    { value: 4, label: "Rozhodně ne" }
-  ];
+// Mapování stran na jejich loga
+const stranyLoga: Record<string, string> = {
+  "ANO": "/loga/ano.svg",
+  "Piráti": "/loga/pirati.svg",
+  "Motoristé": "/loga/motoriste.svg",
+  "Přísaha": "/loga/prisaha.png",
+  "SPD": "/loga/spd.png",
+  "Spolu": "/loga/spolu.png",
+  "STAN": "/loga/stan.png",
+  "Stačilo!": "/loga/stacilo.png",
+  "SocDem": "/loga/socdem.png",
+  "Zelení": "/loga/zeleni.png"
+};
 
-  const [odpovedi, setOdpovedi] = useState<OdpovediUzivatele>({});
-  const [zasadniOtazky, setZasadniOtazky] = useState<Set<number>>(new Set());
-  const [zobrazitVysledky, setZobrazitVysledky] = useState<boolean>(false);
-  const [zobrazitOdpovediStran, setZobrazitOdpovediStran] = useState<boolean>(false);
-  const [zobrazitVsechnyStrany, setZobrazitVsechnyStrany] = useState<boolean>(false);
-  const [aktivniOtazka, setAktivniOtazka] = useState<number>(0);
-  const [limitUpozorneni, setLimitUpozorneni] = useState<boolean>(false);
+// Funkce pro získání loga strany
+const getStranaLogo = (strana: string) => {
+  return stranyLoga[strana] || `https://via.placeholder.com/80x80?text=${encodeURIComponent(strana.substring(0, 3))}`;
+};
+
+// Seznam možností odpovědí
+const moznostiOdpovedi = [
+  { value: 1, label: "Rozhodně ano" },
+  { value: 2, label: "Spíše ano" },
+  { value: 3, label: "Spíše ne" },
+  { value: 4, label: "Rozhodně ne" }
+];
+
+export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodovaMatice, onSubmit }: Props) {
+  console.log("VolebniKalkulacka - props:", { otazky, odpovedi, stranyOdpovedi, bodovaMatice });
+  console.log("VolebniKalkulacka - počet otázek:", otazky?.length);
   
-  // Reference pro hlavní container
-  const containerRef = useRef<HTMLDivElement>(null);
-  
-  // Reference pro sledování, zda byla data již odeslána
-  const dataOdeslana = useRef<boolean>(false);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [userAnswers, setUserAnswers] = useState<Record<number, number>>(odpovedi);
+  const [crucialQuestions, setCrucialQuestions] = useState<Set<number>>(new Set());
+  const [showResults, setShowResults] = useState(false);
+  const [showCrucialQuestionsSelection, setShowCrucialQuestionsSelection] = useState(false);
+  const [detectedRegion, setDetectedRegion] = useState<string | undefined>(undefined);
+  const [results, setResults] = useState<Vysledek[]>([]);
 
-  // State pro tooltip
-  const [activeTooltip, setActiveTooltip] = useState<number | null>(null);
-  const tooltipTimeoutRef = useRef<number | null>(null);
-
-  const handleOdpoved = (otazkaId: number, hodnota: number) => {
-    setOdpovedi(prev => ({ ...prev, [otazkaId]: hodnota }));
-  };
-
-  const handleZasadni = (otazkaId: number) => {
-    setZasadniOtazky(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(otazkaId)) {
-        newSet.delete(otazkaId);
-        setLimitUpozorneni(false);
-        return newSet;
-      } else {
-        // Kontrola limitu 5 zásadních otázek
-        if (newSet.size >= 5) {
-          setLimitUpozorneni(true);
-          return newSet;
-        }
-        
-        newSet.add(otazkaId);
-        return newSet;
-      }
-    });
-  };
-
-  // Funkce pro výpočet shody - zabaleno do useCallback
-  const vypocitejShodu = useCallback((stranaOdpovedi: number[]): number => {
-    let kladneBody = 0;
-    let zaporneBody = 0;
-    let pocetDulezitych = 0;
-    let pocetZodpovezenych = 0;
-
-    otazky.forEach((otazka, index) => {
-      const userOdpoved = odpovedi[otazka.id];
-      const stranaOdpoved = stranaOdpovedi[index];
-      
-      if (userOdpoved) {
-        pocetZodpovezenych++;
-        const vaha = zasadniOtazky.has(otazka.id) ? 2 : 1;
-        if (zasadniOtazky.has(otazka.id)) {
-          pocetDulezitych++;
-        }
-        
-        // Použití bodové matice z Excel souboru
-        const bodyZaOtazku = bodovaMatice[userOdpoved][stranaOdpoved] * vaha;
-        
-        // Rozdělení na kladné a záporné body
-        if (bodyZaOtazku > 0) {
-          kladneBody += bodyZaOtazku;
-        } else {
-          zaporneBody += Math.abs(bodyZaOtazku);
-        }
-      }
-    });
-
-    // Pokud nejsou žádné odpovědi, vrátit 50%
-    if (pocetZodpovezenych === 0) return 50;
-
-    // Výpočet podle přesného vzorce z Excel souboru
-    // Maximum bodů = (počet zodpovězených * 10) + (počet důležitých * 10)
-    const maxBody = (pocetZodpovezenych * 10) + (pocetDulezitych * 10);
-    
-    // Finální vzorec: (kladné - záporné) / (max * 2) + 50%
-    const shoda = ((kladneBody - zaporneBody) / (maxBody * 2) + 0.5) * 100;
-    
-    return Math.max(0, Math.min(100, Math.round(shoda)));
-  }, [odpovedi, zasadniOtazky, bodovaMatice, otazky]);
-
-  // Funkce pro odeslání anonymních dat
-  const odesliAnonymniData = useCallback(async () => {
-    try {
-      const anonymniData = {
-        odpovedi: Object.fromEntries(
-          Object.entries(odpovedi).map(([id, hodnota]) => [id, hodnota])
-        ),
-        zasadniOtazky: Array.from(zasadniOtazky),
-        timestamp: new Date().toISOString(),
-        vysledky: Object.entries(stranyOdpovedi)
-          .map(([strana, odpovediStrany]) => ({
-            strana,
-            shoda: vypocitejShodu(odpovediStrany)
-          }))
-          .sort((a, b) => b.shoda - a.shoda)
-      };
-      
-      console.log("Odesílám anonymní data:", anonymniData);
-    } catch (error) {
-      console.error("Chyba při odesílání dat:", error);
-    }
-  }, [odpovedi, zasadniOtazky, stranyOdpovedi, vypocitejShodu]);
-
+  // Detekce kraje při načtení komponenty
   useEffect(() => {
-    // Odešleme anonymní data pouze jednou při prvním zobrazení výsledků
-    if (zobrazitVysledky) {
-      // Použijeme ref pro sledování, zda už byla data odeslána
-      if (!dataOdeslana.current) {
-        odesliAnonymniData();
-        dataOdeslana.current = true;
+    detectRegion()
+      .then(region => {
+        setDetectedRegion(region);
+      })
+      .catch(error => {
+        console.error("Chyba při detekci kraje:", error);
+      });
+  }, []);
+
+  const currentQuestion = otazky?.[currentQuestionIndex];
+  console.log("VolebniKalkulacka - currentQuestion:", currentQuestion);
+  
+  const answeredCount = Object.keys(userAnswers).length;
+  const totalQuestions = otazky?.length || 0;
+  const progress = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0;
+  console.log("VolebniKalkulacka - answeredCount:", answeredCount, "totalQuestions:", totalQuestions, "progress:", progress);
+  
+  const handleAnswer = (questionId: number, answer: number) => {
+    console.log("handleAnswer:", questionId, answer);
+    setUserAnswers(prev => ({
+      ...prev,
+      [questionId]: answer
+    }));
+  };
+
+  const toggleCrucialQuestion = (questionId: number) => {
+    console.log("toggleCrucialQuestion:", questionId);
+    setCrucialQuestions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(questionId)) {
+        newSet.delete(questionId);
+      } else {
+        if (newSet.size < 5) {
+          newSet.add(questionId);
+        }
       }
-    } else {
-      // Reset při novém vyplnění kalkulačky
-      dataOdeslana.current = false;
+      return newSet;
+    });
+  };
+
+  const calculateResults = () => {
+    console.log("calculateResults - začátek výpočtu");
+    if (!stranyOdpovedi || !otazky || otazky.length === 0) {
+      console.log("calculateResults - chybí stranyOdpovedi nebo otazky");
+      return;
     }
-  }, [zobrazitVysledky, odesliAnonymniData]);
+    
+    const results = Object.entries(stranyOdpovedi).map(([strana, odpovediStrany]) => {
+      let positivePoints = 0;
+      let negativePoints = 0;
+      let importantCount = 0;
+      let answeredCount = 0;
 
-  const vysledky = zobrazitVysledky ? Object.entries(stranyOdpovedi)
-    .map(([strana, odpovediStrany]) => ({
-      strana,
-      shoda: vypocitejShodu(odpovediStrany)
-    }))
-    .sort((a, b) => b.shoda - a.shoda) : [];
+      otazky.forEach((question, index) => {
+        const userAnswer = userAnswers[question.id];
+        const partyAnswer = odpovediStrany[index];
+        
+        if (userAnswer && partyAnswer) {
+          answeredCount++;
+          const weight = crucialQuestions.has(question.id) ? 2 : 1;
+          if (crucialQuestions.has(question.id)) {
+            importantCount++;
+          }
+          
+          const points = bodovaMatice[userAnswer][partyAnswer] * weight;
+          console.log(`calculateResults - otázka ${question.id}: userAnswer=${userAnswer}, partyAnswer=${partyAnswer}, points=${points}`);
+          
+          if (points > 0) {
+            positivePoints += points;
+          } else {
+            negativePoints += Math.abs(points);
+          }
+        }
+      });
 
-  const pocetZodpovezenych = Object.keys(odpovedi).length;
-  const progress = (aktivniOtazka / (otazky.length - 1)) * 100;
+      if (answeredCount === 0) return { strana, shoda: 50 };
 
-  const stahnoutVysledek = () => {
-    // Pevná velikost obrázku
+      const maxPoints = (answeredCount * 10) + (importantCount * 10);
+      const shoda = ((positivePoints - negativePoints) / (maxPoints * 2) + 0.5) * 100;
+      
+      console.log(`calculateResults - strana ${strana}: positivePoints=${positivePoints}, negativePoints=${negativePoints}, maxPoints=${maxPoints}, shoda=${shoda}`);
+      
+      return {
+        strana,
+        shoda: Math.max(0, Math.min(100, Math.round(shoda))),
+      };
+    });
+
+    console.log("calculateResults - výsledky:", results);
+    setResults(results.sort((a, b) => b.shoda - a.shoda));
+    setShowResults(true);
+    
+    // Uložení dat uživatele na pozadí bez zobrazování stavu
+    saveUserData(userAnswers, Array.from(crucialQuestions), detectedRegion)
+      .catch(error => {
+        console.error("Chyba při ukládání dat:", error);
+      });
+    
+    if (onSubmit) {
+      onSubmit(userAnswers, Array.from(crucialQuestions));
+    }
+  };
+
+  const handlePrevious = () => {
+    console.log("handlePrevious");
+    if (showCrucialQuestionsSelection) {
+      setShowCrucialQuestionsSelection(false);
+      setCurrentQuestionIndex(totalQuestions - 1);
+    } else if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
+    }
+  };
+
+  const handleNext = () => {
+    console.log("handleNext, currentQuestionIndex:", currentQuestionIndex, "otazky.length:", otazky?.length);
+    if (otazky && currentQuestionIndex < otazky.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    } else if (!showCrucialQuestionsSelection) {
+      setShowCrucialQuestionsSelection(true);
+    } else {
+      calculateResults();
+    }
+  };
+
+  const resetCalculator = () => {
+    setCurrentQuestionIndex(0);
+    setUserAnswers({});
+    setCrucialQuestions(new Set());
+    setShowResults(false);
+    setShowCrucialQuestionsSelection(false);
+  };
+
+  const downloadResults = () => {
+    if (!results.length) return;
+    
     const canvas = document.createElement('canvas');
     canvas.width = 1080;
     canvas.height = 1350;
     const ctx = canvas.getContext('2d');
     
-    if (!ctx) return; // Kontrola, zda je ctx definováno
+    if (!ctx) return;
 
-    // Bílé pozadí
+    // Background
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Logo NMS
-    const img = new Image();
-    img.onload = () => {
-      // Vykreslení loga
-      ctx.drawImage(img, (canvas.width - 200) / 2, 50, 200, 100);
-      
-      // Nadpis
-      ctx.font = 'bold 48px Arial';
-      ctx.fillStyle = '#000000';
-      ctx.textAlign = 'center';
-      ctx.fillText('Volební kalkulačka 2025', canvas.width / 2, 220);
-      
-      // Podnadpis
-      ctx.font = '24px Arial';
-      ctx.fillText('Moje shoda s politickými stranami', canvas.width / 2, 270);
-      
-      // Vykreslení výsledků
-      const topVysledky = vysledky.slice(0, zobrazitVsechnyStrany ? vysledky.length : 5);
-      const barHeight = 50;
-      const barGap = 20;
-      const barWidth = 800;
-      const startY = 350;
-      
-      topVysledky.forEach((vysledek, index) => {
-        const y = startY + index * (barHeight + barGap);
+    // Header
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, 100);
+    
+    ctx.fillStyle = '#1a1a1a';
+    ctx.font = 'bold 40px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Volební kalkulačka 2025', canvas.width / 2, 50);
+    
+    ctx.font = '24px Arial';
+    ctx.fillText('Vaše výsledky', canvas.width / 2, 85);
+
+    // Date
+    ctx.fillStyle = '#666666';
+    ctx.font = '16px Arial';
+    ctx.textAlign = 'right';
+    const date = new Date().toLocaleDateString('cs-CZ');
+    ctx.fillText(`Vyplněno: ${date}`, canvas.width - 50, 120);
+
+    // Načtení log stran
+    const logoPromises = results.slice(0, 5).map((result) => {
+      return new Promise<HTMLImageElement>((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        const logoPath = getStranaLogo(result.strana);
+        img.src = logoPath.startsWith('http') ? logoPath : window.location.origin + logoPath;
+        img.onload = () => resolve(img);
+        img.onerror = () => {
+          const fallbackImg = new Image();
+          fallbackImg.width = 80;
+          fallbackImg.height = 80;
+          resolve(fallbackImg);
+        };
+      });
+    });
+
+    Promise.all(logoPromises).then((logoImages) => {
+      let yPos = 150;
+      const cardMargin = 30;
+      const cardHeight = 180;
+      const cardWidth = 980;
+      const leftMargin = (canvas.width - cardWidth) / 2;
+
+      results.slice(0, 5).forEach((result, index) => {
+        // Karta strany
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+        ctx.shadowBlur = 5;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 2;
         
-        // Pozadí pruhu
-        ctx.fillStyle = '#f0f0f0';
-        ctx.fillRect((canvas.width - barWidth) / 2, y, barWidth, barHeight);
+        // Zaoblené rohy pro kartu
+        const radius = 8;
+        ctx.beginPath();
+        ctx.moveTo(leftMargin + radius, yPos);
+        ctx.lineTo(leftMargin + cardWidth - radius, yPos);
+        ctx.arcTo(leftMargin + cardWidth, yPos, leftMargin + cardWidth, yPos + radius, radius);
+        ctx.lineTo(leftMargin + cardWidth, yPos + cardHeight - radius);
+        ctx.arcTo(leftMargin + cardWidth, yPos + cardHeight, leftMargin + cardWidth - radius, yPos + cardHeight, radius);
+        ctx.lineTo(leftMargin + radius, yPos + cardHeight);
+        ctx.arcTo(leftMargin, yPos + cardHeight, leftMargin, yPos + cardHeight - radius, radius);
+        ctx.lineTo(leftMargin, yPos + radius);
+        ctx.arcTo(leftMargin, yPos, leftMargin + radius, yPos, radius);
+        ctx.closePath();
+        ctx.fill();
         
-        // Barevný pruh podle shody
-        ctx.fillStyle = getBarColor(vysledek.shoda);
-        ctx.fillRect((canvas.width - barWidth) / 2, y, (vysledek.shoda / 100) * barWidth, barHeight);
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
         
-        // Text strany
-        ctx.fillStyle = '#000000';
-        ctx.font = 'bold 24px Arial';
+        // Levý červený okraj pro první místo
+        if (index === 0) {
+          ctx.fillStyle = '#c8102e';
+          ctx.fillRect(leftMargin, yPos, 4, cardHeight);
+        }
+        
+        // Logo strany - zachování poměru stran
+        const logo = logoImages[index];
+        const logoSize = 100;
+        const logoX = leftMargin + 30;
+        const logoY = yPos + (cardHeight - logoSize) / 2;
+        
+        if (logo.width && logo.height) {
+          // Výpočet rozměrů pro zachování poměru stran
+          let drawWidth, drawHeight, offsetX = 0, offsetY = 0;
+          
+          if (logo.width > logo.height) {
+            drawWidth = logoSize;
+            drawHeight = (logo.height / logo.width) * logoSize;
+            offsetY = (logoSize - drawHeight) / 2;
+          } else {
+            drawHeight = logoSize;
+            drawWidth = (logo.width / logo.height) * logoSize;
+            offsetX = (logoSize - drawWidth) / 2;
+          }
+          
+          ctx.drawImage(logo, logoX + offsetX, logoY + offsetY, drawWidth, drawHeight);
+        }
+
+        // Pořadí a název strany
+        ctx.fillStyle = '#1a1a1a';
         ctx.textAlign = 'left';
-        ctx.fillText(vysledek.strana, (canvas.width - barWidth) / 2 + 20, y + 32);
+        ctx.font = 'bold 28px Arial';
+        ctx.fillText(`${index + 1}. ${result.strana}`, leftMargin + 160, yPos + 40);
+        
+        // Popis strany
+        ctx.font = '18px Arial';
+        ctx.fillStyle = '#666666';
+        const popis = stranyPopis[result.strana] || `${result.strana} je politická strana.`;
+        ctx.fillText(popis, leftMargin + 160, yPos + 75);
+
+        // Progress bar
+        const progressBarWidth = 600;
+        const progressBarHeight = 12;
+        const progressBarX = leftMargin + 160;
+        const progressBarY = yPos + 120;
+        
+        // Pozadí progress baru - zaoblené rohy
+        ctx.fillStyle = '#f0f0f0';
+        const progressRadius = 5;
+        ctx.beginPath();
+        ctx.moveTo(progressBarX + progressRadius, progressBarY);
+        ctx.lineTo(progressBarX + progressBarWidth - progressRadius, progressBarY);
+        ctx.arcTo(progressBarX + progressBarWidth, progressBarY, progressBarX + progressBarWidth, progressBarY + progressRadius, progressRadius);
+        ctx.lineTo(progressBarX + progressBarWidth, progressBarY + progressBarHeight - progressRadius);
+        ctx.arcTo(progressBarX + progressBarWidth, progressBarY + progressBarHeight, progressBarX + progressBarWidth - progressRadius, progressBarY + progressBarHeight, progressRadius);
+        ctx.lineTo(progressBarX + progressRadius, progressBarY + progressBarHeight);
+        ctx.arcTo(progressBarX, progressBarY + progressBarHeight, progressBarX, progressBarY + progressBarHeight - progressRadius, progressRadius);
+        ctx.lineTo(progressBarX, progressBarY + progressRadius);
+        ctx.arcTo(progressBarX, progressBarY, progressBarX + progressRadius, progressBarY, progressRadius);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Vyplněný progress bar - zaoblené rohy
+        const filledWidth = (result.shoda / 100) * progressBarWidth;
+        if (filledWidth > 0) {
+          ctx.fillStyle = stranyBarvy[result.strana] || '#1976d2';
+          ctx.beginPath();
+          
+          // Pro velmi krátké pruhy, které by byly kratší než poloměr, upravit vykreslování
+          if (filledWidth < progressRadius * 2) {
+            const adjustedRadius = filledWidth / 2;
+            ctx.moveTo(progressBarX + adjustedRadius, progressBarY);
+            ctx.arcTo(progressBarX + filledWidth, progressBarY, progressBarX + filledWidth, progressBarY + progressRadius, adjustedRadius);
+            ctx.lineTo(progressBarX + filledWidth, progressBarY + progressBarHeight - adjustedRadius);
+            ctx.arcTo(progressBarX + filledWidth, progressBarY + progressBarHeight, progressBarX + adjustedRadius, progressBarY + progressBarHeight, adjustedRadius);
+            ctx.lineTo(progressBarX + adjustedRadius, progressBarY + progressBarHeight);
+            ctx.arcTo(progressBarX, progressBarY + progressBarHeight, progressBarX, progressBarY + progressBarHeight - adjustedRadius, adjustedRadius);
+            ctx.lineTo(progressBarX, progressBarY + adjustedRadius);
+            ctx.arcTo(progressBarX, progressBarY, progressBarX + adjustedRadius, progressBarY, adjustedRadius);
+          } else {
+            ctx.moveTo(progressBarX + progressRadius, progressBarY);
+            ctx.lineTo(progressBarX + filledWidth - progressRadius, progressBarY);
+            ctx.arcTo(progressBarX + filledWidth, progressBarY, progressBarX + filledWidth, progressBarY + progressRadius, progressRadius);
+            ctx.lineTo(progressBarX + filledWidth, progressBarY + progressBarHeight - progressRadius);
+            ctx.arcTo(progressBarX + filledWidth, progressBarY + progressBarHeight, progressBarX + filledWidth - progressRadius, progressBarY + progressBarHeight, progressRadius);
+            ctx.lineTo(progressBarX + progressRadius, progressBarY + progressBarHeight);
+            ctx.arcTo(progressBarX, progressBarY + progressBarHeight, progressBarX, progressBarY + progressBarHeight - progressRadius, progressRadius);
+            ctx.lineTo(progressBarX, progressBarY + progressRadius);
+            ctx.arcTo(progressBarX, progressBarY, progressBarX + progressRadius, progressBarY, progressRadius);
+          }
+          
+          ctx.closePath();
+          ctx.fill();
+        }
         
         // Procento shody
-        ctx.font = 'bold 24px Arial';
+        ctx.fillStyle = '#1a1a1a';
+        ctx.font = 'bold 36px Arial';
         ctx.textAlign = 'right';
-        ctx.fillText(`${vysledek.shoda}%`, (canvas.width + barWidth) / 2 - 20, y + 32);
+        ctx.fillText(`${result.shoda}%`, leftMargin + cardWidth - 30, yPos + 60);
+        
+        ctx.fillStyle = '#999999';
+        ctx.font = '16px Arial';
+        ctx.fillText('shoda', leftMargin + cardWidth - 30, yPos + 85);
+        
+        yPos += cardHeight + cardMargin;
       });
       
-      // Patička
-      ctx.font = '18px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText('www.nms.cz/volebni-kalkulacka', canvas.width / 2, canvas.height - 50);
+      // Footer
+      ctx.fillStyle = '#f5f5f5';
+      ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
       
-      // Stažení obrázku
+      ctx.fillStyle = '#666666';
+      ctx.font = '14px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('Novinky.cz ve spolupráci s NMS Market Research', canvas.width / 2, canvas.height - 20);
+
+      // Convert to image and download
       const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');
-      link.download = 'volebni-kalkulacka-vysledek.png';
+      link.download = 'volebni-kalkulacka-vysledky.png';
       link.href = dataUrl;
       link.click();
-    };
-    
-    // Načtení obrázku loga
-    img.src = '/nms.png'; // Předpokládáme, že logo je ve veřejné složce
+    });
   };
+
+  if (showResults) {
+    return (
+      <div className="volebni-kalkulacka">
+        <div className="header">
+          <h1>Volební kalkulačka 2025</h1>
+          <p>Vaše výsledky</p>
+        </div>
+        
+        <div className="content-area">
+          <div className="results-container">
+            <div id="resultsContainer">
+              {results.map((result, index) => (
+                <div key={result.strana} className="party-result-card">
+                  <div className="party-logo">
+                    <img src={getStranaLogo(result.strana)} alt={`Logo ${result.strana}`} />
+                  </div>
+                  <div className="party-info">
+                    <div className="party-header">
+                      <span className="party-rank">{index + 1}. {result.strana}</span>
+                    </div>
+                    <div className="party-description">
+                      {stranyPopis[result.strana] || `${result.strana} je politická strana.`}
+                    </div>
+                    <div className="party-progress">
+                      <div 
+                        className="party-progress-bar" 
+                        style={{ width: `${result.shoda}%`, background: stranyBarvy[result.strana] || '#1976d2' }}
+                      ></div>
+                    </div>
+                  </div>
+                  <div className="party-score">
+                    <div className="score-number">{result.shoda}%</div>
+                    <div className="score-label">shoda</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        
+        <div className="results-actions">
+          <button className="action-button primary" onClick={downloadResults}>
+            Stáhnout výsledky
+          </button>
+          <button className="action-button secondary" onClick={resetCalculator}>
+            Vyplnit znovu
+          </button>
+        </div>
+        
+        <div className="footer">
+          <p>Novinky.cz ve spolupráci s NMS Market Research</p>
+        </div>
+      </div>
+    );
+  }
   
-  // Funkce pro získání barvy pruhu podle shody
-  const getBarColor = (shoda: number): string => {
-    if (shoda >= 80) return '#4CAF50'; // Zelená pro vysokou shodu
-    if (shoda >= 60) return '#8BC34A'; // Světle zelená
-    if (shoda >= 40) return '#FFEB3B'; // Žlutá
-    if (shoda >= 20) return '#FF9800'; // Oranžová
-    return '#F44336'; // Červená pro nízkou shodu
-  };
+  if (showCrucialQuestionsSelection) {
+    return (
+      <div className="volebni-kalkulacka">
+        <div className="header">
+          <h1>Volební kalkulačka 2025</h1>
+          <p>Výběr zásadních otázek</p>
+        </div>
+        
+        <div className="content-area">
+          <div className="question-slide">
+            <div className="question-text">
+              Vyberte až 5 otázek, které jsou pro vás nejdůležitější
+            </div>
+            
+            <div className="crucial-questions-info">
+              Tyto otázky budou mít při výpočtu výsledků dvojnásobnou váhu. 
+              Vybráno: {crucialQuestions.size} z 5
+            </div>
+            
+            <div className="crucial-questions-list">
+              {otazky.map((otazka, index) => (
+                <div 
+                  key={otazka.id} 
+                  className={`crucial-question-item ${crucialQuestions.has(otazka.id) ? 'selected' : ''}`}
+                >
+                  <input
+                    type="checkbox"
+                    id={`crucial-${otazka.id}`}
+                    checked={crucialQuestions.has(otazka.id)}
+                    onChange={() => toggleCrucialQuestion(otazka.id)}
+                    disabled={!crucialQuestions.has(otazka.id) && crucialQuestions.size >= 5}
+                  />
+                  <label 
+                    htmlFor={`crucial-${otazka.id}`}
+                  >
+                    <span style={{ fontWeight: crucialQuestions.has(otazka.id) ? 'bold' : 'normal' }}>
+                      {otazka.text}
+                    </span>
+                    <div className="answer-label">
+                      Vaše odpověď: {moznostiOdpovedi.find(opt => opt.value === userAnswers[otazka.id])?.label || "Nezodpovězeno"}
+                    </div>
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
 
-  const resetKalkulacky = () => {
-    setOdpovedi({});
-    setZasadniOtazky(new Set());
-    setZobrazitVysledky(false);
-    setZobrazitOdpovediStran(false);
-    setZobrazitVsechnyStrany(false);
-    setAktivniOtazka(0);
-    setLimitUpozorneni(false);
-    dataOdeslana.current = false;
-  };
-
-  const dalsiOtazka = () => {
-    if (aktivniOtazka < otazky.length - 1) {
-      setAktivniOtazka(prev => prev + 1);
-      containerRef.current?.scrollTo(0, 0);
-    } else {
-      setZobrazitVysledky(true);
-    }
-  };
-
-  const predchoziOtazka = () => {
-    if (aktivniOtazka > 0) {
-      setAktivniOtazka(prev => prev - 1);
-      containerRef.current?.scrollTo(0, 0);
-    }
-  };
-
-  const getOdpovedLabel = (value: number): string => {
-    const moznost = moznostiOdpovedi.find(m => m.value === value);
-    return moznost ? moznost.label : '';
-  };
-
-  const showTooltip = (otazkaId: number) => {
-    if (tooltipTimeoutRef.current) {
-      clearTimeout(tooltipTimeoutRef.current);
-    }
-    setActiveTooltip(otazkaId);
-  };
-
-  const hideTooltip = () => {
-    if (tooltipTimeoutRef.current) {
-      clearTimeout(tooltipTimeoutRef.current);
-    }
-    tooltipTimeoutRef.current = window.setTimeout(() => {
-      setActiveTooltip(null);
-    }, 300) as unknown as number;
-  };
+        <div className="navigation">
+          <button 
+            className="nav-button back" 
+            onClick={handlePrevious}
+          >
+            Zpět
+          </button>
+          <button 
+            className="nav-button next" 
+            onClick={handleNext}
+          >
+            Zobrazit výsledky
+          </button>
+        </div>
+        
+        <div className="footer">
+          <p>Novinky.cz ve spolupráci s NMS Market Research</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <Card className="w-full max-w-4xl">
-      <CardHeader>
-        <div className="flex justify-center mb-4">
-          <img src="/nms.png" alt="NMS Logo" className="h-12" />
+    <div className="volebni-kalkulacka">
+      <div className="header">
+        <h1>Volební kalkulačka 2025</h1>
+        <p>Porovnejte své názory s politickými stranami</p>
+      </div>
+      
+      <div className="progress-container">
+        <div className="progress-info">
+          <span>Otázka {currentQuestionIndex + 1} z {totalQuestions}</span>
+          <span>Zodpovězeno: {answeredCount} z {totalQuestions}</span>
         </div>
-        <CardTitle className="text-center">Volební kalkulačka 2025</CardTitle>
-        <CardDescription className="text-center">
-          Porovnejte své politické postoje s programy hlavních politických stran
-        </CardDescription>
-      </CardHeader>
-      <CardContent ref={containerRef} className="max-h-[70vh] overflow-y-auto">
-        {!zobrazitVysledky ? (
-          <div>
-            <Progress value={progress} className="mb-6" />
-            
-            <div className="text-center mb-6">
-              <span className="text-sm text-gray-500">
-                Otázka {aktivniOtazka + 1} z {otazky.length}
-              </span>
-            </div>
-            
-            <h3 className="text-xl font-bold mb-6">
-              {otazky[aktivniOtazka].text}
-            </h3>
-            
-            <div className="grid gap-4 mb-6">
-              {moznostiOdpovedi.map((moznost) => (
-                <Button
-                  key={moznost.value}
-                  variant={odpovedi[otazky[aktivniOtazka].id] === moznost.value ? 'default' : 'outline'}
-                  className="w-full justify-start text-left"
-                  onClick={() => handleOdpoved(otazky[aktivniOtazka].id, moznost.value)}
-                >
-                  {moznost.label}
-                </Button>
-              ))}
-            </div>
-            
-            <div className="flex items-center space-x-2 mb-8">
-              <Checkbox
-                id={`zasadni-${otazky[aktivniOtazka].id}`}
-                checked={zasadniOtazky.has(otazky[aktivniOtazka].id)}
-                onCheckedChange={() => handleZasadni(otazky[aktivniOtazka].id)}
-              />
-              <Label htmlFor={`zasadni-${otazky[aktivniOtazka].id}`}>
-                Toto téma je pro mě zásadní (max. 5)
-              </Label>
-            </div>
-            
-            {limitUpozorneni && (
-              <Alert variant="destructive" className="mb-6">
-                <AlertDescription>
-                  Můžete vybrat maximálně 5 zásadních otázek.
-                </AlertDescription>
-              </Alert>
-            )}
-            
-            <div className="flex justify-between mt-6">
-              <Button
-                variant="outline"
-                onClick={predchoziOtazka}
-                disabled={aktivniOtazka === 0}
-                className="flex items-center gap-1"
-              >
-                <span>Zpět</span>
-              </Button>
-              
-              <Button
-                onClick={dalsiOtazka}
-                className="flex items-center gap-1"
-              >
-                <span>{aktivniOtazka === otazky.length - 1 ? 'Zobrazit výsledky' : 'Další'}</span>
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div>
-            <h3 className="text-xl font-bold mb-6">
-              Výsledky - Vaše shoda s politickými stranami
-            </h3>
-            
-            <div className="mb-6">
-              <p className="text-sm text-gray-500 mb-4">
-                Zodpovězeno {pocetZodpovezenych} z {otazky.length} otázek.
-                {zasadniOtazky.size > 0 && ` Označeno ${zasadniOtazky.size} zásadních otázek.`}
-              </p>
-              
-              {(zobrazitVsechnyStrany ? vysledky : vysledky.slice(0, 5)).map((vysledek) => (
-                <div key={vysledek.strana} className="mb-4">
-                  <div className="flex justify-between mb-1">
-                    <span className="font-medium">{vysledek.strana}</span>
-                    <span className="font-bold">{vysledek.shoda}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5">
-                    <div
-                      className="h-2.5 rounded-full"
-                      style={{
-                        width: `${vysledek.shoda}%`,
-                        backgroundColor: getBarColor(vysledek.shoda)
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-              
-              {!zobrazitVsechnyStrany && vysledky.length > 5 && (
-                <Button
-                  variant="outline"
-                  onClick={() => setZobrazitVsechnyStrany(true)}
-                  className="w-full mt-2"
-                >
-                  Zobrazit všechny strany
-                </Button>
-              )}
-              
-              {zobrazitVsechnyStrany && (
-                <Button
-                  variant="outline"
-                  onClick={() => setZobrazitVsechnyStrany(false)}
-                  className="w-full mt-2"
-                >
-                  Zobrazit pouze top 5 stran
-                </Button>
-              )}
-            </div>
-            
-            <div className="flex flex-col gap-4 mt-8">
-              <Button
-                variant="outline"
-                onClick={() => setZobrazitOdpovediStran(!zobrazitOdpovediStran)}
-                className="flex items-center gap-2"
-              >
-                {zobrazitOdpovediStran ? 'Skrýt odpovědi stran' : 'Zobrazit odpovědi stran'}
-              </Button>
-              
-              <Button
-                variant="outline"
-                onClick={stahnoutVysledek}
-                className="flex items-center gap-2"
-              >
-                Stáhnout výsledek jako obrázek
-              </Button>
-              
-              <Button
-                variant="outline"
-                onClick={resetKalkulacky}
-                className="flex items-center gap-2"
-              >
-                Začít znovu
-              </Button>
-            </div>
-            
-            {zobrazitOdpovediStran && (
-              <div className="mt-8">
-                <h3 className="text-xl font-bold mb-4">Odpovědi politických stran</h3>
-                
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-left">
-                    <thead className="text-xs uppercase bg-gray-100">
-                      <tr>
-                        <th className="px-4 py-2">Strana</th>
-                        {otazky.map((otazka) => (
-                          <th 
-                            key={otazka.id} 
-                            className="px-2 py-2 text-center relative"
-                            onMouseEnter={() => showTooltip(otazka.id)}
-                            onMouseLeave={hideTooltip}
-                          >
-                            {otazka.id}
-                            {activeTooltip === otazka.id && (
-                              <div className="absolute z-10 bg-black text-white text-xs rounded py-1 px-2 left-1/2 transform -translate-x-1/2 bottom-full mb-1 w-48">
-                                {otazka.text}
-                              </div>
-                            )}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {Object.entries(stranyOdpovedi).map(([strana, odpovediStrany]) => (
-                        <tr key={strana} className="border-b">
-                          <td className="px-4 py-2 font-medium">{strana}</td>
-                          {odpovediStrany.map((odpoved, index) => (
-                            <td key={index} className="px-2 py-2 text-center">
-                              {getOdpovedLabel(odpoved)}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-};
+        <div className="progress-bar">
+          <div 
+            className="progress-fill" 
+            style={{ width: `${progress}%`, background: '#c8102e' }}
+          ></div>
+        </div>
+      </div>
 
-export default VolebniKalkulacka; 
+      <div className="content-area">
+        <div className="question-slide">
+          <div className="question-text">{currentQuestion?.text}</div>
+          
+          <div className="options-container">
+            {moznostiOdpovedi.map(option => (
+              <label 
+                key={option.value} 
+                className={`option-label ${currentQuestion && userAnswers[currentQuestion.id] === option.value ? 'selected' : ''}`}
+              >
+                <input 
+                  type="radio"
+                  name={`question-${currentQuestion?.id}`}
+                  checked={currentQuestion && userAnswers[currentQuestion.id] === option.value}
+                  onChange={() => currentQuestion && handleAnswer(currentQuestion.id, option.value)}
+                />
+                {option.label}
+              </label>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="navigation">
+        <button 
+          className="nav-button back" 
+          onClick={handlePrevious}
+          disabled={currentQuestionIndex === 0}
+        >
+          Zpět
+        </button>
+        <button 
+          className="nav-button next" 
+          onClick={handleNext}
+          disabled={!currentQuestion || !userAnswers[currentQuestion.id]}
+        >
+          {currentQuestionIndex === totalQuestions - 1 ? 'Další' : 'Další'}
+        </button>
+      </div>
+      
+      <div className="footer">
+        <p>Novinky.cz ve spolupráci s NMS Market Research</p>
+      </div>
+    </div>
+  );
+} 
