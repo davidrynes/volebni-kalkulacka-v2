@@ -464,10 +464,63 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
 
       // Convert to image and download
       const dataUrl = canvas.toDataURL('image/png');
-      const link = document.createElement('a');
-      link.download = 'volebni-kalkulacka-vysledky.png';
-      link.href = dataUrl;
-      link.click();
+      
+      // Detekce, zda jsme v iframe
+      const isInIframe = window !== window.parent;
+      
+      if (isInIframe) {
+        try {
+          // Pokus o komunikaci s rodičovským oknem
+          window.parent.postMessage({
+            type: 'downloadImage',
+            dataUrl: dataUrl,
+            filename: 'volebni-kalkulacka-vysledky.png'
+          }, '*');
+          
+          // Záložní řešení - otevřít v novém okně
+          const newWindow = window.open();
+          if (newWindow) {
+            newWindow.document.write(`
+              <html>
+                <head>
+                  <title>Výsledky volební kalkulačky</title>
+                  <style>
+                    body { margin: 0; padding: 20px; text-align: center; font-family: Arial, sans-serif; }
+                    h2 { margin-bottom: 20px; }
+                    img { max-width: 100%; height: auto; border: 1px solid #ddd; }
+                    p { margin: 20px 0; }
+                    .button { 
+                      display: inline-block; 
+                      background: #c8102e; 
+                      color: white; 
+                      padding: 10px 20px; 
+                      text-decoration: none; 
+                      border-radius: 4px; 
+                      margin-top: 10px;
+                    }
+                  </style>
+                </head>
+                <body>
+                  <h2>Výsledky volební kalkulačky</h2>
+                  <img src="${dataUrl}" alt="Výsledky volební kalkulačky" />
+                  <p>Klikněte pravým tlačítkem na obrázek a zvolte "Uložit obrázek jako..." pro stažení.</p>
+                  <a href="${dataUrl}" download="volebni-kalkulacka-vysledky.png" class="button">Stáhnout obrázek</a>
+                </body>
+              </html>
+            `);
+            newWindow.document.close();
+          }
+        } catch (e) {
+          // Pokud selže komunikace s rodičem i otevření nového okna, zkusíme poslední možnost
+          alert('Pro stažení výsledků klikněte pravým tlačítkem na tlačítko a zvolte "Otevřít odkaz v novém okně".');
+        }
+      } else {
+        // Standardní stažení pro non-iframe
+        const link = document.createElement('a');
+        link.download = 'volebni-kalkulacka-vysledky.png';
+        link.href = dataUrl;
+        link.click();
+      }
     });
   };
 

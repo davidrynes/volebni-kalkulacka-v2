@@ -3,98 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Test embedování Volební kalkulačky</title>
+  <title>Volební kalkulačka - Embed</title>
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
       margin: 0;
-      padding: 20px;
-      background-color: #f5f5f5;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
     }
     .container {
-      max-width: 1200px;
+      max-width: 600px;
       margin: 0 auto;
-    }
-    h1 {
-      color: #333;
-    }
-    .example {
-      margin-bottom: 40px;
-      background: white;
-      border-radius: 8px;
       padding: 20px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    .example-title {
-      margin-top: 0;
-      margin-bottom: 15px;
-      font-size: 18px;
-      color: #444;
-    }
-    .embed-container {
-      border: 1px solid #ddd;
-      padding: 10px;
-      background: #fafafa;
-      margin-bottom: 15px;
-    }
-    pre {
-      background: #f0f0f0;
-      padding: 10px;
-      border-radius: 4px;
-      overflow-x: auto;
-      margin-bottom: 10px;
     }
     iframe {
-      border: 1px solid #ccc;
-      margin: 0 auto;
-      display: block;
+      width: 100%;
+      height: 600px;
+      border: none;
+      overflow: hidden;
+    }
+    @media (max-width: 480px) {
+      iframe {
+        height: 100vw; /* Poměr 1:1 na mobilních zařízeních */
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Test embedování Volební kalkulačky</h1>
-    <p>Tato stránka ukazuje příklady, jak lze embedovat volební kalkulačku pomocí iframe.</p>
-    
-    <div class="example">
-      <h2 class="example-title">Standardní embed (600×700)</h2>
-      <p>Kalkulačka v původní velikosti 600×700 pixelů:</p>
-      <div class="embed-container">
-        <pre>&lt;iframe src="http://localhost:5173/" width="600" height="700" style="border:0;" title="Volební kalkulačka 2025"&gt;&lt;/iframe&gt;</pre>
-        <iframe src="http://localhost:5173/" width="600" height="700" style="border:0;" title="Volební kalkulačka 2025"></iframe>
-      </div>
-    </div>
-    
-    <div class="example">
-      <h2 class="example-title">Embed s menší šířkou (400×467)</h2>
-      <p>Kalkulačka při zmenšení šířky na 400px (poměr stran se zachová):</p>
-      <div class="embed-container">
-        <pre>&lt;iframe src="http://localhost:5173/" width="400" height="467" style="border:0;" title="Volební kalkulačka 2025"&gt;&lt;/iframe&gt;</pre>
-        <iframe src="http://localhost:5173/" width="400" height="467" style="border:0;" title="Volební kalkulačka 2025"></iframe>
-      </div>
-    </div>
-    
-    <div class="example">
-      <h2 class="example-title">Menší embed (300×350)</h2>
-      <p>Kalkulačka při zmenšení na 300×350 pixelů:</p>
-      <div class="embed-container">
-        <pre>&lt;iframe src="http://localhost:5173/" width="300" height="350" style="border:0;" title="Volební kalkulačka 2025"&gt;&lt;/iframe&gt;</pre>
-        <iframe src="http://localhost:5173/" width="300" height="350" style="border:0;" title="Volební kalkulačka 2025"></iframe>
-      </div>
-    </div>
-    
-    <div class="example">
-      <h2 class="example-title">Responzivní embed</h2>
-      <p>Kalkulačka v responzivním kontejneru (se zachovaným poměrem stran):</p>
-      <div class="embed-container">
-        <pre>&lt;div style="position:relative;width:100%;height:0;padding-bottom:116.67%;"&gt;
-  &lt;iframe src="http://localhost:5173/" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" title="Volební kalkulačka 2025"&gt;&lt;/iframe&gt;
-&lt;/div&gt;</pre>
-        <div style="position:relative;width:100%;height:0;padding-bottom:116.67%;">
-          <iframe src="http://localhost:5173/" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" title="Volební kalkulačka 2025"></iframe>
-        </div>
-      </div>
-    </div>
+    <iframe id="volebniKalkulacka" src="index.html" allowtransparency="true" scrolling="no"></iframe>
   </div>
+
+  <script>
+    // Funkce pro přijetí zprávy z iframe
+    window.addEventListener('message', function(event) {
+      // Kontrola původu zprávy
+      if (event.origin === window.location.origin) {
+        // Zpracování zprávy podle typu
+        if (event.data && event.data.type === 'resize') {
+          // Změna velikosti iframe
+          const iframe = document.getElementById('volebniKalkulacka');
+          if (iframe) {
+            iframe.style.height = event.data.height + 'px';
+            iframe.style.width = event.data.width + 'px';
+          }
+        } else if (event.data && event.data.type === 'downloadImage') {
+          // Stažení obrázku
+          const { dataUrl, filename } = event.data;
+          const link = document.createElement('a');
+          link.href = dataUrl;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+      }
+    });
+  </script>
 </body>
 </html> 
