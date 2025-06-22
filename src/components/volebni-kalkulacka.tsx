@@ -47,16 +47,16 @@ const stranyPopis: Record<string, string> = {
 
 // Barvy stran pro progress bar
 const stranyBarvy: Record<string, string> = {
-  "Přísaha": "#1976d2",
-  "Piráti": "#000000",
-  "SPD": "#1565c0",
-  "Zelení": "#2e7d32",
-  "STAN": "#0288d1",
-  "Stačilo!": "#c62828",
-  "Motoristé": "#795548",
-  "SocDem": "#f57c00",
+  "Přísaha": "#03f",
+  "Piráti": "#444444",
+  "SPD": "#844e4e",
+  "Zelení": "#7fe592",
+  "STAN": "#e83a66",
+  "Stačilo!": "#cc0033",
+  "Motoristé": "#7699de",
+  "SocDem": "#ff6600",
   "Spolu": "#1565c0",
-  "ANO": "#29b6f6",
+  "ANO": "#33cccc",
 };
 
 // Mapování stran na jejich loga
