@@ -4,14 +4,24 @@ import { App } from './app.tsx'
 
 const rootElement = document.getElementById('app')
 if (rootElement) {
-  // Nastavíme pevné rozměry
-  rootElement.style.width = '600px'
-  rootElement.style.height = '700px'
+  // Nastavíme rozměry pro desktop
+  if (window.innerWidth > 480) {
+    rootElement.style.width = '600px'
+    rootElement.style.height = 'auto'
+    rootElement.style.minHeight = '700px'
+  } else {
+    // Pro mobilní zařízení necháme responzivní
+    rootElement.style.width = '100%'
+    rootElement.style.height = 'auto'
+    rootElement.style.minHeight = '100vh'
+  }
+  
   rootElement.style.display = 'flex'
   rootElement.style.justifyContent = 'center'
   rootElement.style.alignItems = 'center'
-  rootElement.style.overflow = 'hidden'
+  rootElement.style.overflow = 'visible'
   rootElement.style.margin = '0 auto'
+  rootElement.style.position = 'relative'
 }
 
 // Vykreslení aplikace
@@ -24,8 +34,8 @@ function resizeParentIframeIfNeeded() {
     if (window !== window.parent) {
       const message = {
         type: 'resize',
-        width: 600,
-        height: 700
+        width: window.innerWidth > 480 ? 600 : window.innerWidth,
+        height: window.innerWidth > 480 ? 700 : window.innerHeight
       }
       window.parent.postMessage(message, '*')
     }
@@ -37,14 +47,21 @@ function resizeParentIframeIfNeeded() {
 // Vynucené překreslení po načtení
 window.addEventListener('load', () => {
   resizeParentIframeIfNeeded()
-  
-  const appElement = document.getElementById('app')
-  if (appElement) {
-    // Vynutíme překreslení
-    const currentDisplay = appElement.style.display
-    appElement.style.display = 'none'
-    setTimeout(() => {
-      appElement.style.display = currentDisplay
-    }, 10)
+})
+
+// Přizpůsobení při změně velikosti okna
+window.addEventListener('resize', () => {
+  const rootElement = document.getElementById('app')
+  if (rootElement) {
+    if (window.innerWidth > 480) {
+      rootElement.style.width = '600px'
+      rootElement.style.height = 'auto'
+      rootElement.style.minHeight = '700px'
+    } else {
+      rootElement.style.width = '100%'
+      rootElement.style.height = 'auto'
+      rootElement.style.minHeight = '100vh'
+    }
   }
+  resizeParentIframeIfNeeded()
 })
