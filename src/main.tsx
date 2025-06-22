@@ -7,19 +7,16 @@ if (rootElement) {
   // Nastavíme rozměry pro desktop
   if (window.innerWidth > 480) {
     rootElement.style.width = '600px'
-    rootElement.style.height = 'auto'
-    rootElement.style.minHeight = '700px'
+    rootElement.style.height = '100%'
   } else {
     // Pro mobilní zařízení necháme responzivní
     rootElement.style.width = '100%'
-    rootElement.style.height = 'auto'
-    rootElement.style.minHeight = '100vh'
+    rootElement.style.height = '100%'
   }
   
   rootElement.style.display = 'flex'
-  rootElement.style.justifyContent = 'center'
-  rootElement.style.alignItems = 'center'
-  rootElement.style.overflow = 'visible'
+  rootElement.style.flexDirection = 'column'
+  rootElement.style.overflow = 'hidden'
   rootElement.style.margin = '0 auto'
   rootElement.style.position = 'relative'
 }
@@ -35,7 +32,7 @@ function resizeParentIframeIfNeeded() {
       const message = {
         type: 'resize',
         width: window.innerWidth > 480 ? 600 : window.innerWidth,
-        height: window.innerWidth > 480 ? 700 : window.innerHeight
+        height: window.innerHeight
       }
       window.parent.postMessage(message, '*')
     }
@@ -55,13 +52,10 @@ window.addEventListener('resize', () => {
   if (rootElement) {
     if (window.innerWidth > 480) {
       rootElement.style.width = '600px'
-      rootElement.style.height = 'auto'
-      rootElement.style.minHeight = '700px'
     } else {
       rootElement.style.width = '100%'
-      rootElement.style.height = 'auto'
-      rootElement.style.minHeight = '100vh'
     }
+    rootElement.style.height = '100%'
   }
   resizeParentIframeIfNeeded()
 })
