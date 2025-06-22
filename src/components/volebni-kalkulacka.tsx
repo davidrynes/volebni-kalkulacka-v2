@@ -282,7 +282,25 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
       });
     });
 
-    Promise.all(logoPromises).then((logoImages) => {
+    // Načtení loga Novinky.cz
+    const novinyLogoPromise = new Promise<HTMLImageElement>((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = window.location.origin + '/loga/novinky_logo_rgb.svg';
+      img.onload = () => resolve(img);
+      img.onerror = () => {
+        console.error('Nepodařilo se načíst logo Novinky.cz');
+        const fallbackImg = new Image();
+        fallbackImg.width = 200;
+        fallbackImg.height = 40;
+        resolve(fallbackImg);
+      };
+    });
+
+    Promise.all([...logoPromises, novinyLogoPromise]).then((logoImages) => {
+      const partyLogos = logoImages.slice(0, 5);
+      const novinyLogo = logoImages[5];
+      
       let yPos = 150;
       const cardMargin = 30;
       const cardHeight = 180;
@@ -322,7 +340,7 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
         }
         
         // Logo strany - zachování poměru stran
-        const logo = logoImages[index];
+        const logo = partyLogos[index];
         const logoSize = 100;
         const logoX = leftMargin + 30;
         const logoY = yPos + (cardHeight - logoSize) / 2;
@@ -423,6 +441,16 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
         
         yPos += cardHeight + cardMargin;
       });
+      
+      // Logo Novinky.cz nad patičkou
+      if (novinyLogo.width && novinyLogo.height) {
+        const logoWidth = 200;
+        const logoHeight = (novinyLogo.height / novinyLogo.width) * logoWidth;
+        const logoX = (canvas.width - logoWidth) / 2;
+        const logoY = canvas.height - 80;
+        
+        ctx.drawImage(novinyLogo, logoX, logoY, logoWidth, logoHeight);
+      }
       
       // Footer
       ctx.fillStyle = '#f5f5f5';
