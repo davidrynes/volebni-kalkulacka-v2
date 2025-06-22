@@ -536,6 +536,10 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
               Vybráno: {crucialQuestions.size} z 5
             </div>
             
+            <div className="scroll-indicator">
+              <i></i>
+            </div>
+            
             <div className="crucial-questions-list">
               {otazky.map((otazka, index) => (
                 <div 

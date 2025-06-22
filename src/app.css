@@ -95,7 +95,7 @@ body {
 .content-area {
     flex: 1;
     overflow-y: auto;
-    padding: 100px 0 80px 0;
+    padding: 110px 0 80px 0;
     width: 100%;
     -webkit-overflow-scrolling: touch;
     display: flex;
@@ -231,6 +231,13 @@ body {
     font-size: 14px;
 }
 
+.crucial-questions-list {
+    max-height: none;
+    overflow-y: visible;
+    margin-bottom: 20px;
+    padding-right: 5px;
+}
+
 .crucial-question-item {
     padding: 12px;
     margin-bottom: 8px;
@@ -269,16 +276,46 @@ body {
     margin-top: 4px;
 }
 
-.crucial-questions-list {
-    max-height: 450px;
-    overflow-y: auto;
-    margin-bottom: 20px;
-    padding-right: 5px;
+/* Scroll indicator for crucial questions */
+.scroll-indicator {
+    text-align: center;
+    color: #666;
+    font-size: 12px;
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.scroll-indicator::before,
+.scroll-indicator::after {
+    content: "";
+    height: 1px;
+    background: #ddd;
+    flex: 1;
+    margin: 0 10px;
+}
+
+.scroll-indicator i {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-bottom: 2px solid #666;
+    border-right: 2px solid #666;
+    transform: rotate(45deg);
+    margin-top: -4px;
+    animation: scroll-indicator-animation 1.5s infinite;
+}
+
+@keyframes scroll-indicator-animation {
+    0% { transform: rotate(45deg) translate(0, 0); opacity: 0.4; }
+    50% { transform: rotate(45deg) translate(5px, 5px); opacity: 1; }
+    100% { transform: rotate(45deg) translate(0, 0); opacity: 0.4; }
 }
 
 /* Question Slide */
 .question-slide {
-    padding: 10px 20px;
+    padding: 15px 20px;
     width: 100%;
     box-sizing: border-box;
 }
@@ -723,7 +760,7 @@ body {
     .content-area {
         flex: 1;
         overflow-y: auto;
-        padding: 80px 5px 80px 5px;
+        padding: 90px 5px 80px 5px;
         width: 100%;
         box-sizing: border-box;
         -webkit-overflow-scrolling: touch;
@@ -731,13 +768,16 @@ body {
         flex-direction: column;
     }
     
-    .question-text {
-        font-size: 16px;
-        padding: 0;
+    .question-slide {
+        padding: 5px 10px;
         width: 100%;
         box-sizing: border-box;
-        white-space: normal;
-        word-wrap: break-word;
+    }
+    
+    .question-text {
+        font-size: 16px;
+        margin-top: 5px;
+        margin-bottom: 20px;
     }
     
     .options-container {
