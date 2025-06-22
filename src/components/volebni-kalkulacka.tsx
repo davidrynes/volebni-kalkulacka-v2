@@ -617,9 +617,10 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
                 key={option.value} 
                 className={`option-label ${currentQuestion && userAnswers[currentQuestion.id] === option.value ? 'selected' : ''}`}
               >
-                <input 
+                <input
                   type="radio"
                   name={`question-${currentQuestion?.id}`}
+                  value={option.value}
                   checked={currentQuestion && userAnswers[currentQuestion.id] === option.value}
                   onChange={() => currentQuestion && handleAnswer(currentQuestion.id, option.value)}
                 />
@@ -629,7 +630,7 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
           </div>
         </div>
       </div>
-
+      
       <div className="navigation">
         <button 
           className="nav-button back" 
@@ -641,9 +642,9 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
         <button 
           className="nav-button next" 
           onClick={handleNext}
-          disabled={!currentQuestion || !userAnswers[currentQuestion.id]}
+          disabled={currentQuestion && !userAnswers[currentQuestion.id]}
         >
-          {currentQuestionIndex === totalQuestions - 1 ? 'Další' : 'Další'}
+          {currentQuestionIndex === totalQuestions - 1 ? 'Pokračovat' : 'Další'}
         </button>
       </div>
       
