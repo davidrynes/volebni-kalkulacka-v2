@@ -61,9 +61,10 @@ body {
     padding: 12px;
     text-align: center;
     flex-shrink: 0;
-    width: 90%;
+    width: 100%;
     border-radius: 8px 8px 0 0;
     margin: 0 auto;
+    box-sizing: border-box;
 }
 
 .header h1 {
@@ -606,48 +607,89 @@ body {
 
 /* Responsive */
 @media (max-width: 480px) {
+    body {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        min-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+    
     .volebni-kalkulacka {
         max-width: 100%;
         height: auto;
         min-height: 100vh;
+        width: 100%;
+        padding: 0;
+        box-sizing: border-box;
+        overflow-x: hidden;
     }
     
     .app-container {
         padding: 0;
         height: auto;
         min-height: 100vh;
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    
+    .header {
+        width: 100%;
+        padding: 10px 5px;
+        border-radius: 0;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
     
     .header h1 {
         font-size: 18px;
+        width: 100%;
+        white-space: normal;
+        word-wrap: break-word;
     }
     
     .header p {
         font-size: 12px;
+        width: 100%;
+        white-space: normal;
+        word-wrap: break-word;
     }
     
     .content-area {
         flex: 1;
         overflow-y: auto;
-        padding-bottom: 60px; /* Větší padding pro zajištění viditelnosti obsahu */
+        padding: 0 5px 60px 5px;
+        width: 100%;
+        box-sizing: border-box;
+        -webkit-overflow-scrolling: touch;
     }
     
     .question-text {
         font-size: 16px;
         padding: 15px 10px;
+        width: 100%;
+        box-sizing: border-box;
+        white-space: normal;
+        word-wrap: break-word;
     }
     
     .options-container {
-        padding: 0 10px;
+        padding: 0 5px;
+        width: 100%;
+        box-sizing: border-box;
     }
     
     .option-label {
         padding: 12px 10px;
         margin-bottom: 8px;
+        width: 100%;
+        box-sizing: border-box;
+        white-space: normal;
+        word-wrap: break-word;
     }
     
     .navigation {
-        padding: 10px;
+        padding: 10px 5px;
         position: fixed;
         bottom: 0;
         left: 0;
@@ -655,6 +697,7 @@ body {
         background: white;
         box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
         z-index: 100;
+        box-sizing: border-box;
     }
     
     .nav-button {
@@ -665,28 +708,54 @@ body {
     }
     
     .footer {
-        margin-bottom: 50px; /* Prostor pro navigační tlačítka */
+        margin-bottom: 50px;
+        width: 100%;
+        box-sizing: border-box;
     }
     
     .crucial-questions-list {
-        padding: 0 10px;
+        padding: 0 5px;
+        width: 100%;
+        box-sizing: border-box;
     }
     
     .crucial-question-item {
         padding: 10px;
+        width: 100%;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: row;
+    }
+    
+    .crucial-question-item label {
+        width: 100%;
+        white-space: normal;
+        word-wrap: break-word;
     }
     
     .results-container {
-        padding: 0 10px;
+        padding: 0 5px;
+        width: 100%;
+        box-sizing: border-box;
     }
     
     .party-result-card {
         padding: 15px 10px;
+        width: 100%;
+        box-sizing: border-box;
     }
     
     .results-actions {
-        padding: 10px;
+        padding: 10px 5px;
         margin-bottom: 50px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .progress-container {
+        padding: 10px 5px;
+        width: 100%;
+        box-sizing: border-box;
     }
 }
 
