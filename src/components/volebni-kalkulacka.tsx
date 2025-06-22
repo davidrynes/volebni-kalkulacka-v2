@@ -447,7 +447,13 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
         const logoWidth = 200;
         const logoHeight = (novinyLogo.height / novinyLogo.width) * logoWidth;
         const logoX = (canvas.width - logoWidth) / 2;
-        const logoY = canvas.height - 80;
+        
+        // Vypočítáme pozici loga, aby bylo uprostřed volného prostoru
+        // Zjistíme, kde končí poslední karta a kde začíná patička
+        const lastCardBottom = yPos - cardMargin; // yPos již obsahuje pozici pro další kartu, odečteme margin
+        const footerTop = canvas.height - 50; // Patička má výšku 50px
+        const availableSpace = footerTop - lastCardBottom;
+        const logoY = lastCardBottom + (availableSpace - logoHeight) / 2;
         
         ctx.drawImage(novinyLogo, logoX, logoY, logoWidth, logoHeight);
       }
