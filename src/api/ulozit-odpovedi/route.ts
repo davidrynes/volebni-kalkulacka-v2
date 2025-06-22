@@ -81,10 +81,6 @@ export async function handleRequest(request: Request): Promise<Response> {
     // Uložení do našeho dočasného úložiště
     ulozenaData.push(zaznam);
     
-    // Pouze logování pro účely vývoje
-    console.log('Uložená data:', zaznam);
-    console.log(`Celkem uložených záznamů: ${ulozenaData.length}`);
-    
     // V reálném prostředí bychom zde měli kód pro ukládání do databáze,
     // například pomocí Firebase, MongoDB, nebo jiné databáze
     
@@ -97,8 +93,6 @@ export async function handleRequest(request: Request): Promise<Response> {
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    console.error('Chyba při zpracování požadavku:', error);
-    
     return new Response(JSON.stringify({ 
       error: 'Nepodařilo se zpracovat požadavek',
       details: error instanceof Error ? error.message : 'Unknown error' 

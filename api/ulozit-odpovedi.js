@@ -60,10 +60,6 @@ export default async function handler(req, res) {
     // Uložení do našeho dočasného úložiště
     ulozenaData.push(zaznam);
     
-    // Pouze logování pro účely vývoje
-    console.log('Uložená data:', zaznam);
-    console.log(`Celkem uložených záznamů: ${ulozenaData.length}`);
-    
     // V reálném prostředí bychom zde měli kód pro ukládání do databáze,
     // například pomocí Firebase, MongoDB, nebo jiné databáze
     
@@ -73,8 +69,6 @@ export default async function handler(req, res) {
       id: zaznam.id 
     });
   } catch (error) {
-    console.error('Chyba při zpracování požadavku:', error);
-    
     return res.status(500).json({ 
       error: 'Nepodařilo se zpracovat požadavek',
       details: error.message || 'Unknown error' 

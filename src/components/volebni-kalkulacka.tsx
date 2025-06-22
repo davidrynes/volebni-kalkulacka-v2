@@ -87,9 +87,6 @@ const moznostiOdpovedi = [
 ];
 
 export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodovaMatice, onSubmit }: Props) {
-  console.log("VolebniKalkulacka - props:", { otazky, odpovedi, stranyOdpovedi, bodovaMatice });
-  console.log("VolebniKalkulacka - počet otázek:", otazky?.length);
-  
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<Record<number, number>>(odpovedi);
   const [crucialQuestions, setCrucialQuestions] = useState<Set<number>>(new Set());
@@ -105,20 +102,17 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
         setDetectedRegion(region);
       })
       .catch(error => {
-        console.error("Chyba při detekci kraje:", error);
+        // Tiché zpracování chyby
       });
   }, []);
 
   const currentQuestion = otazky?.[currentQuestionIndex];
-  console.log("VolebniKalkulacka - currentQuestion:", currentQuestion);
   
   const answeredCount = Object.keys(userAnswers).length;
   const totalQuestions = otazky?.length || 0;
   const progress = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0;
-  console.log("VolebniKalkulacka - answeredCount:", answeredCount, "totalQuestions:", totalQuestions, "progress:", progress);
   
   const handleAnswer = (questionId: number, answer: number) => {
-    console.log("handleAnswer:", questionId, answer);
     setUserAnswers(prev => ({
       ...prev,
       [questionId]: answer
@@ -126,7 +120,6 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
   };
 
   const toggleCrucialQuestion = (questionId: number) => {
-    console.log("toggleCrucialQuestion:", questionId);
     setCrucialQuestions(prev => {
       const newSet = new Set(prev);
       if (newSet.has(questionId)) {
@@ -141,9 +134,7 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
   };
 
   const calculateResults = () => {
-    console.log("calculateResults - začátek výpočtu");
     if (!stranyOdpovedi || !otazky || otazky.length === 0) {
-      console.log("calculateResults - chybí stranyOdpovedi nebo otazky");
       return;
     }
     
@@ -165,7 +156,6 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
           }
           
           const points = bodovaMatice[userAnswer][partyAnswer] * weight;
-          console.log(`calculateResults - otázka ${question.id}: userAnswer=${userAnswer}, partyAnswer=${partyAnswer}, points=${points}`);
           
           if (points > 0) {
             positivePoints += points;
@@ -180,22 +170,19 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
       const maxPoints = (answeredCount * 10) + (importantCount * 10);
       const shoda = ((positivePoints - negativePoints) / (maxPoints * 2) + 0.5) * 100;
       
-      console.log(`calculateResults - strana ${strana}: positivePoints=${positivePoints}, negativePoints=${negativePoints}, maxPoints=${maxPoints}, shoda=${shoda}`);
-      
       return {
         strana,
         shoda: Math.max(0, Math.min(100, Math.round(shoda))),
       };
     });
 
-    console.log("calculateResults - výsledky:", results);
     setResults(results.sort((a, b) => b.shoda - a.shoda));
     setShowResults(true);
     
     // Uložení dat uživatele na pozadí bez zobrazování stavu
     saveUserData(userAnswers, Array.from(crucialQuestions), detectedRegion)
       .catch(error => {
-        console.error("Chyba při ukládání dat:", error);
+        // Tiché zpracování chyby
       });
     
     if (onSubmit) {
@@ -204,7 +191,6 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
   };
 
   const handlePrevious = () => {
-    console.log("handlePrevious");
     if (showCrucialQuestionsSelection) {
       setShowCrucialQuestionsSelection(false);
       setCurrentQuestionIndex(totalQuestions - 1);
@@ -214,7 +200,6 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
   };
 
   const handleNext = () => {
-    console.log("handleNext, currentQuestionIndex:", currentQuestionIndex, "otazky.length:", otazky?.length);
     if (otazky && currentQuestionIndex < otazky.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else if (!showCrucialQuestionsSelection) {

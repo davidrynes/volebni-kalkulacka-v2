@@ -55,7 +55,6 @@ export const detectRegion = async (): Promise<string | undefined> => {
     /* Původní implementace s externím API - ponecháno pro referenci
     const response = await fetch('https://ipapi.co/json/');
     if (!response.ok) {
-      console.error('Nepodařilo se získat data o lokaci');
       return undefined;
     }
     
@@ -107,7 +106,6 @@ export const detectRegion = async (): Promise<string | undefined> => {
     
     return undefined;
   } catch (error) {
-    console.error('Chyba při detekci regionu:', error);
     return undefined;
   }
 };
@@ -125,7 +123,7 @@ export const saveUserData = async (
       try {
         detectedRegion = await detectRegion();
       } catch (error) {
-        console.error("Chyba při detekci kraje:", error);
+        // Tiché zpracování chyby
       }
     }
     
@@ -140,9 +138,8 @@ export const saveUserData = async (
     // Lokální ukládání pro vývoj/testování
     try {
       localStorage.setItem('volebniKalkulacka_data', JSON.stringify(data));
-      console.log("Data byla uložena lokálně:", data);
     } catch (error) {
-      console.error("Chyba při lokálním ukládání:", error);
+      // Tiché zpracování chyby
     }
     
     // Odeslání dat na API endpoint
@@ -156,19 +153,16 @@ export const saveUserData = async (
       });
       
       if (!response.ok) {
-        console.error('Nepodařilo se uložit data na server');
         return false;
       }
       
       return true;
     } catch (error) {
-      console.error('Chyba při ukládání dat:', error);
       // I když selže serverové ukládání, považujeme operaci za úspěšnou,
       // pokud se podařilo uložit data lokálně
       return true;
     }
   } catch (error) {
-    console.error('Chyba při ukládání dat:', error);
     return false;
   }
 }; 
