@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'preact/hooks';
+import { useState, useEffect, useRef } from 'preact/hooks';
 import { saveUserData, detectRegion } from '../services/dataService';
 
 // Definice typů
@@ -94,6 +94,7 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
   const [showCrucialQuestionsSelection, setShowCrucialQuestionsSelection] = useState(false);
   const [detectedRegion, setDetectedRegion] = useState<string | undefined>(undefined);
   const [results, setResults] = useState<Vysledek[]>([]);
+  const contentAreaRef = useRef<HTMLDivElement>(null);
 
   // Detekce kraje při načtení komponenty
   useEffect(() => {
@@ -189,6 +190,15 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
       onSubmit(userAnswers, Array.from(crucialQuestions));
     }
   };
+
+  // Scrollování na začátek při zobrazení výsledků
+  useEffect(() => {
+    if (showResults && contentAreaRef.current) {
+      setTimeout(() => {
+        contentAreaRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 100);
+    }
+  }, [showResults]);
 
   const handlePrevious = () => {
     if (showCrucialQuestionsSelection) {
@@ -469,7 +479,7 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
           <p>Vaše výsledky</p>
         </div>
         
-        <div className="content-area">
+        <div className="content-area" ref={contentAreaRef}>
           <div className="results-container">
             <div id="resultsContainer">
               {results.map((result, index) => (
@@ -525,7 +535,7 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
           <p>Výběr zásadních otázek</p>
         </div>
         
-        <div className="content-area">
+        <div className="content-area" ref={contentAreaRef}>
           <div className="question-slide">
             <div className="question-text">
               Vyberte až 5 otázek, které jsou pro vás nejdůležitější
@@ -611,7 +621,7 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
         </div>
       </div>
 
-      <div className="content-area">
+      <div className="content-area" ref={contentAreaRef}>
         <div className="question-slide">
           <div className="question-text">{currentQuestion?.text}</div>
           
