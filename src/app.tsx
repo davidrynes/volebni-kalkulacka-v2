@@ -45,7 +45,7 @@ const bodovaMatice = {
 // Hlavní aplikační komponenta
 export function App() { 
   return (
-    <div className="app-container">
+    <div className="app-container" data-dot="zobrazeni-kalkulacky">
       <VolebniKalkulacka 
         otazky={otazky} 
         stranyOdpovedi={stranyOdpovedi} 

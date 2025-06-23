@@ -565,10 +565,10 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
         </div>
         
         <div className="results-actions">
-          <button className="action-button primary" onClick={downloadResults}>
+          <button className="action-button primary" onClick={downloadResults} data-dot="stahnout-vysledky">
             Stáhnout výsledky
           </button>
-          <button className="action-button secondary" onClick={resetCalculator}>
+          <button className="action-button secondary" onClick={resetCalculator} data-dot="vyplnit-znovu">
             Vyplnit znovu
           </button>
         </div>
@@ -642,6 +642,7 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
           <button 
             className="nav-button next" 
             onClick={handleNext}
+            data-dot="zobrazit-vysledky"
           >
             Zobrazit výsledky
           </button>
