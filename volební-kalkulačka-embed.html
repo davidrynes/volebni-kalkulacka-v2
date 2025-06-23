@@ -6,7 +6,14 @@
   <title>Volební kalkulačka - Embed</title>
   <script src="https://h.seznam.cz/js/dot-small.js"></script>
   <script>
-    DOT.cfg({ service: 'novinky' });
+    window.addEventListener('DOMContentLoaded', function() {
+      // Kontrola, zda je DOT k dispozici
+      if (typeof DOT !== 'undefined') {
+        DOT.cfg({ service: 'novinky' });
+      } else {
+        console.error('DOT není definován. Skript se pravděpodobně nenačetl.');
+      }
+    });
   </script>
   <style>
     body {
