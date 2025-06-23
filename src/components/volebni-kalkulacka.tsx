@@ -80,10 +80,10 @@ const getStranaLogo = (strana: string) => {
 
 // Seznam možností odpovědí
 const moznostiOdpovedi = [
-  { value: 1, label: "Rozhodně ano" },
-  { value: 2, label: "Spíše ano" },
-  { value: 3, label: "Spíše ne" },
-  { value: 4, label: "Rozhodně ne" }
+  { value: 1, label: "Rozhodně souhlasím" },
+  { value: 2, label: "Spíše souhlasím" },
+  { value: 3, label: "Spíše nesouhlasím" },
+  { value: 4, label: "Rozhodně nesouhlasím" }
 ];
 
 export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodovaMatice, onSubmit }: Props) {
