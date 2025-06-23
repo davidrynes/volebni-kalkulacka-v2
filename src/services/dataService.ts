@@ -142,26 +142,8 @@ export const saveUserData = async (
       // Tiché zpracování chyby
     }
     
-    // Odeslání dat na API endpoint
-    try {
-      const response = await fetch('/api/ulozit-odpovedi', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-      
-      if (!response.ok) {
-        return false;
-      }
-      
-      return true;
-    } catch (error) {
-      // I když selže serverové ukládání, považujeme operaci za úspěšnou,
-      // pokud se podařilo uložit data lokálně
-      return true;
-    }
+    // Odeslání dat na API endpoint není potřeba
+    return true;
   } catch (error) {
     return false;
   }
