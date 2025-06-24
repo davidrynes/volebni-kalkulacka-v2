@@ -36,7 +36,6 @@ const stranyPopis: Record<string, string> = {
   "Přísaha": "Přísaha je politické hnutí založené bývalým policistou Robertem Šlachtou.",
   "Piráti": "Česká pirátská strana je liberální politická strana zaměřená na transparentnost a digitalizaci.",
   "SPD": "SPD je národně konzervativní politická strana vedená Tomiem Okamurou.",
-  "Zelení": "Strana zelených je politická strana zaměřená na ekologii a ochranu životního prostředí.",
   "STAN": "Starostové a nezávislí je středopravicová politická strana vycházející z komunální politiky.",
   "Stačilo!": "Stačilo! je levicové politické hnutí vedené Kateřinou Konečnou.",
   "Motoristé": "Motoristé sobě je politické hnutí zaměřené na práva řidičů a dopravní problematiku.",
@@ -50,7 +49,6 @@ const stranyBarvy: Record<string, string> = {
   "Přísaha": "#03f",
   "Piráti": "#444444",
   "SPD": "#844e4e",
-  "Zelení": "#7fe592",
   "STAN": "#e83a66",
   "Stačilo!": "#cc0033",
   "Motoristé": "#7699de",
@@ -70,7 +68,6 @@ const stranyLoga: Record<string, string> = {
   "STAN": "/loga/stan.png",
   "Stačilo!": "/loga/stacilo.png",
   "SocDem": "/loga/socdem.png",
-  "Zelení": "/loga/zeleni.png"
 };
 
 // Funkce pro získání loga strany
