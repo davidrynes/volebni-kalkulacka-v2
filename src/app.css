@@ -764,7 +764,7 @@ body {
     .content-area {
         flex: 1;
         overflow-y: auto;
-        padding: 75px 0px 90px 0px;
+        padding: 75px 0px 0px 0px;
         width: 100%;
         box-sizing: border-box;
         -webkit-overflow-scrolling: touch;
