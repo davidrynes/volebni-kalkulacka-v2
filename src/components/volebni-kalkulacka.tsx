@@ -34,7 +34,7 @@ interface Props {
 // Popisy stran pro výsledky
 const stranyPopis: Record<string, string> = {
   "Přísaha": "Přísaha je politické hnutí založené bývalým policistou Robertem Šlachtou.",
-  "Piráti": "Česká pirátská strana je liberální politická strana zaměřená na transparentnost a digitalizaci.",
+  "Piráti+Zelení": "Česká pirátská strana je liberální politická strana zaměřená na transparentnost a digitalizaci.",
   "SPD": "SPD je národně konzervativní politická strana vedená Tomiem Okamurou.",
   "STAN": "Starostové a nezávislí je středopravicová politická strana vycházející z komunální politiky.",
   "Stačilo!": "Stačilo! je levicové politické hnutí vedené Kateřinou Konečnou.",
@@ -47,7 +47,7 @@ const stranyPopis: Record<string, string> = {
 // Barvy stran pro progress bar
 const stranyBarvy: Record<string, string> = {
   "Přísaha": "#03f",
-  "Piráti": "#444444",
+  "Piráti+Zelení": "#444444",
   "SPD": "#844e4e",
   "STAN": "#e83a66",
   "Stačilo!": "#cc0033",
@@ -60,7 +60,7 @@ const stranyBarvy: Record<string, string> = {
 // Mapování stran na jejich loga
 const stranyLoga: Record<string, string> = {
   "ANO": "/loga/ano.svg",
-  "Piráti": "/loga/pirati.svg",
+  "Piráti+Zelení": "/loga/pirati.svg",
   "Motoristé": "/loga/motoriste.svg",
   "Přísaha": "/loga/prisaha.png",
   "SPD": "/loga/spd.png",
@@ -257,39 +257,53 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
     const date = new Date().toLocaleDateString('cs-CZ');
     ctx.fillText(`Vyplněno: ${date}`, canvas.width - 50, 120);
 
-    // Načtení log stran
-    const logoPromises = results.slice(0, 5).map((result) => {
-      return new Promise<HTMLImageElement>((resolve) => {
+    // Příprava obrázků s event listenery
+    const prepareImages = () => {
+      // Načtení log stran
+      const logoPromises = results.slice(0, 5).map((result) => {
+        return new Promise<HTMLImageElement>((resolve) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          
+          // Nejprve nastavíme event listenery
+          img.onload = () => resolve(img);
+          img.onerror = () => {
+            const fallbackImg = new Image();
+            fallbackImg.width = 80;
+            fallbackImg.height = 80;
+            resolve(fallbackImg);
+          };
+          
+          // Poté nastavíme src
+          const logoPath = getStranaLogo(result.strana);
+          img.src = logoPath.startsWith('http') ? logoPath : window.location.origin + logoPath;
+        });
+      });
+
+      // Načtení loga Novinky.cz
+      const novinyLogoPromise = new Promise<HTMLImageElement>((resolve) => {
         const img = new Image();
         img.crossOrigin = 'anonymous';
-        const logoPath = getStranaLogo(result.strana);
-        img.src = logoPath.startsWith('http') ? logoPath : window.location.origin + logoPath;
+        
+        // Nejprve nastavíme event listenery
         img.onload = () => resolve(img);
         img.onerror = () => {
+          console.error('Nepodařilo se načíst logo Novinky.cz');
           const fallbackImg = new Image();
-          fallbackImg.width = 80;
-          fallbackImg.height = 80;
+          fallbackImg.width = 200;
+          fallbackImg.height = 40;
           resolve(fallbackImg);
         };
+        
+        // Poté nastavíme src
+        img.src = window.location.origin + '/loga/novinky_logo_rgb.svg';
       });
-    });
 
-    // Načtení loga Novinky.cz
-    const novinyLogoPromise = new Promise<HTMLImageElement>((resolve) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.src = window.location.origin + '/loga/novinky_logo_rgb.svg';
-      img.onload = () => resolve(img);
-      img.onerror = () => {
-        console.error('Nepodařilo se načíst logo Novinky.cz');
-        const fallbackImg = new Image();
-        fallbackImg.width = 200;
-        fallbackImg.height = 40;
-        resolve(fallbackImg);
-      };
-    });
-
-    Promise.all([...logoPromises, novinyLogoPromise]).then((logoImages) => {
+      return Promise.all([...logoPromises, novinyLogoPromise]);
+    };
+    
+    // Zpracování obrázků a vykreslení canvasu
+    prepareImages().then((logoImages) => {
       const partyLogos = logoImages.slice(0, 5);
       const novinyLogo = logoImages[5];
       
@@ -462,55 +476,36 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
       // Convert to image and download
       const dataUrl = canvas.toDataURL('image/png');
       
-      // Detekce, zda jsme v iframe
-      const isInIframe = window !== window.parent;
+      // Detekce, zda jsme v iframe/embedded prostředí
+      const isEmbedded = window !== window.parent;
       
-      if (isInIframe) {
-        try {
-          // Pokus o komunikaci s rodičovským oknem
-          window.parent.postMessage({
-            type: 'downloadImage',
-            dataUrl: dataUrl,
-            filename: 'volebni-kalkulacka-vysledky.png'
-          }, '*');
-          
-          // Záložní řešení - otevřít v novém okně
-          const newWindow = window.open();
-          if (newWindow) {
-            newWindow.document.write(`
-              <html>
-                <head>
-                  <title>Výsledky volební kalkulačky</title>
-                  <style>
-                    body { margin: 0; padding: 20px; text-align: center; font-family: Arial, sans-serif; }
-                    h2 { margin-bottom: 20px; }
-                    img { max-width: 100%; height: auto; border: 1px solid #ddd; }
-                    p { margin: 20px 0; }
-                    .button { 
-                      display: inline-block; 
-                      background: #c8102e; 
-                      color: white; 
-                      padding: 10px 20px; 
-                      text-decoration: none; 
-                      border-radius: 4px; 
-                      margin-top: 10px;
-                    }
-                  </style>
-                </head>
-                <body>
-                  <h2>Výsledky volební kalkulačky</h2>
-                  <img src="${dataUrl}" alt="Výsledky volební kalkulačky" />
-                  <p>Klikněte pravým tlačítkem na obrázek a zvolte "Uložit obrázek jako..." pro stažení.</p>
-                  <a href="${dataUrl}" download="volebni-kalkulacka-vysledky.png" class="button">Stáhnout obrázek</a>
-                </body>
-              </html>
-            `);
-            newWindow.document.close();
-          }
-        } catch (e) {
-          // Pokud selže komunikace s rodičem i otevření nového okna, zkusíme poslední možnost
-          alert('Pro stažení výsledků klikněte pravým tlačítkem na tlačítko a zvolte "Otevřít odkaz v novém okně".');
-        }
+      if (isEmbedded) {
+        // Komunikace s rodičovským oknem pro stažení
+        window.parent.postMessage({
+          type: 'downloadImage',
+          dataUrl: dataUrl,
+          filename: 'volebni-kalkulacka-vysledky.png'
+        }, '*');
+
+        // Zobrazení zpětné vazby uživateli namísto alert - vytvoření informačního prvku
+        const downloadInfo = document.createElement('div');
+        downloadInfo.className = 'download-notification';
+        downloadInfo.innerHTML = 'Obrázek se připravuje ke stažení...';
+        downloadInfo.style.position = 'fixed';
+        downloadInfo.style.bottom = '80px';
+        downloadInfo.style.left = '50%';
+        downloadInfo.style.transform = 'translateX(-50%)';
+        downloadInfo.style.background = '#333';
+        downloadInfo.style.color = 'white';
+        downloadInfo.style.padding = '10px 20px';
+        downloadInfo.style.borderRadius = '5px';
+        downloadInfo.style.zIndex = '1000';
+        
+        document.body.appendChild(downloadInfo);
+        
+        setTimeout(() => {
+          document.body.removeChild(downloadInfo);
+        }, 3000);
       } else {
         // Standardní stažení pro non-iframe
         const link = document.createElement('a');
@@ -562,10 +557,10 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
         </div>
         
         <div className="results-actions">
-          <button className="action-button primary" onClick={downloadResults} data-dot="stahnout-vysledky">
+          <button className="action-button primary" onClick={downloadResults} data-dot="sc-volebni-kalkulacka-poslanecke-volby-2025/stahnout-vysledky">
             Stáhnout výsledky
           </button>
-          <button className="action-button secondary" onClick={resetCalculator} data-dot="vyplnit-znovu">
+          <button className="action-button secondary" onClick={resetCalculator} data-dot="sc-volebni-kalkulacka-poslanecke-volby-2025/vyplnit-znovu">
             Vyplnit znovu
           </button>
         </div>
@@ -639,7 +634,7 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
           <button 
             className="nav-button next" 
             onClick={handleNext}
-            data-dot="zobrazit-vysledky"
+            data-dot="sc-volebni-kalkulacka-poslanecke-volby-2025/zobrazit-vysledky"
           >
             Zobrazit výsledky
           </button>
@@ -708,6 +703,7 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
           className="nav-button next" 
           onClick={handleNext}
           disabled={currentQuestion && !userAnswers[currentQuestion.id]}
+          data-dot="sc-volebni-kalkulacka-poslanecke-volby-2025/dalsi-otazka"
         >
           {currentQuestionIndex === totalQuestions - 1 ? 'Pokračovat' : 'Další'}
         </button>

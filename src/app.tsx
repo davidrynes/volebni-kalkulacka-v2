@@ -23,7 +23,7 @@ const otazky = [
 // Odpovědi politických stran na otázky
 const stranyOdpovedi = {
   "Přísaha": [3, 1, 4, 4, 2, 3, 1, 1, 2, 3, 1, 4, 4, 4, 1],
-  "Piráti": [4, 1, 2, 1, 2, 2, 2, 1, 4, 2, 4, 1, 4, 2, 3],
+  "Piráti+Zelení": [4, 1, 2, 1, 2, 2, 2, 1, 4, 2, 4, 1, 4, 2, 3],
   "SPD": [1, 4, 4, 4, 4, 4, 1, 1, 1, 4, 1, 4, 1, 3, 1],
   "STAN": [4, 1, 2, 1, 1, 1, 4, 3, 4, 2, 4, 1, 4, 1, 4],
   "Stačilo!": [1, 4, 2, 2, 3, 1, 1, 1, 1, 4, 1, 4, 1, 4, 1],
@@ -44,7 +44,7 @@ const bodovaMatice = {
 // Hlavní aplikační komponenta
 export function App() { 
   return (
-    <div className="app-container" data-dot="zobrazeni-kalkulacky">
+    <div className="app-container" data-dot="sc-volebni-kalkulacka-poslanecke-volby-2025">
       <VolebniKalkulacka 
         otazky={otazky} 
         stranyOdpovedi={stranyOdpovedi} 

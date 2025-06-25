@@ -135,15 +135,43 @@ export const saveUserData = async (
       timestamp: Date.now()
     };
     
-    // Lokální ukládání pro vývoj/testování
+    // Odeslání dat na centrální endpoint API
     try {
-      localStorage.setItem('volebniKalkulacka_data', JSON.stringify(data));
+      // Nastavení API endpoint URL 
+      const apiUrl = '/api/ulozit-odpovedi';
+      
+      // Odeslání dat pomocí fetch API
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+        // Důležité pro multi-instance prostředí - nepoužívat credentials
+        credentials: 'omit'
+      });
+      
+      if (!response.ok) {
+        console.error('Nepodařilo se uložit data na server', response.status);
+        // Pokud server není dostupný, uložíme data lokálně jako zálohu
+        try {
+          localStorage.setItem('volebniKalkulacka_data', JSON.stringify(data));
+        } catch (e) {
+          // Tiché zpracování chyby
+        }
+        return false;
+      }
+      
+      return true;
     } catch (error) {
-      // Tiché zpracování chyby
+      // V případě chyby při komunikaci se serverem, uložíme data lokálně
+      try {
+        localStorage.setItem('volebniKalkulacka_data', JSON.stringify(data));
+      } catch (e) {
+        // Tiché zpracování chyby
+      }
+      return false;
     }
-    
-    // Odeslání dat na API endpoint není potřeba
-    return true;
   } catch (error) {
     return false;
   }
