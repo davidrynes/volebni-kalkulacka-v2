@@ -59,15 +59,15 @@ const stranyBarvy: Record<string, string> = {
 
 // Mapování stran na jejich loga
 const stranyLoga: Record<string, string> = {
-  "ANO": "/loga/ano.svg",
-  "Piráti+Zelení": "/loga/pirati.svg",
-  "Motoristé": "/loga/motoriste.svg",
-  "Přísaha": "/loga/prisaha.png",
-  "SPD": "/loga/spd.png",
-  "Spolu": "/loga/spolu.png",
-  "STAN": "/loga/stan.png",
-  "Stačilo!": "/loga/stacilo.png",
-  "SocDem": "/loga/socdem.png",
+  "ANO": "https://d15-a.sdn.cz/d_15/c_img_oa_A/nO7kYQIzllzLYfDe5DlgjGY/b232/ano-logo.png?fl=nop",
+  "Piráti+Zelení": "https://d15-a.sdn.cz/d_15/c_img_oa_A/nO7kYQIzllCHfwdDesDlglbC/2474/pirati.png?fl=nop",
+  "Motoristé": "https://d15-a.sdn.cz/d_15/c_img_oa_A/kPxAuWMbDHCqtaXBoFDlgj47/943b/motoriste-sobe.png?fl=nop",
+  "Přísaha": "https://via.placeholder.com/80x80?text=Prisaha",
+  "SPD": "https://d15-a.sdn.cz/d_15/c_img_oa_A/nO7kYQIzllDshrEDkCDlgmwP/6e8a/spd.png?fl=nop",
+  "Spolu": "https://d15-a.sdn.cz/d_15/c_img_oa_A/kPxAuWMbDHBP5fVBqGDlgneB/96db/spolu.png?fl=nop",
+  "STAN": "https://d15-a.sdn.cz/d_15/c_img_oa_A/kPxAuWMbDHDRREJBrODlgo7W/4527/starostove.png?fl=nop",
+  "Stačilo!": "https://d15-a.sdn.cz/d_15/c_img_oa_A/nO7kYQIzllCHfwdDe2DlgoDC/061c/stacilo.png?fl=nop",
+  "SocDem": "https://d15-a.sdn.cz/d_15/c_img_oa_A/kPxAuWMbDHCqtaXBn5DlgmJY/d2be/socdem.png?fl=nop",
 };
 
 // Funkce pro získání loga strany
@@ -276,7 +276,7 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
           
           // Poté nastavíme src
           const logoPath = getStranaLogo(result.strana);
-          img.src = logoPath.startsWith('http') ? logoPath : window.location.origin + logoPath;
+          img.src = logoPath;
         });
       });
 
@@ -296,7 +296,7 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
         };
         
         // Poté nastavíme src
-        img.src = window.location.origin + '/loga/novinky_logo_rgb.svg';
+        img.src = "https://d15-a.sdn.cz/d_15/c_img_oa_A/kPxAuWMbDHBP5fVBp7DlgksS/d053/novinky.png?fl=nop";
       });
 
       return Promise.all([...logoPromises, novinyLogoPromise]);
