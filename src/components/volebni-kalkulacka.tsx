@@ -62,7 +62,7 @@ const stranyLoga: Record<string, string> = {
   "ANO": "https://d15-a.sdn.cz/d_15/c_img_oa_A/nO7kYQIzllzLYfDe5DlgjGY/b232/ano-logo.png?fl=nop",
   "Piráti+Zelení": "https://d15-a.sdn.cz/d_15/c_img_oa_A/nO7kYQIzllCHfwdDesDlglbC/2474/pirati.png?fl=nop",
   "Motoristé": "https://d15-a.sdn.cz/d_15/c_img_oa_A/kPxAuWMbDHCqtaXBoFDlgj47/943b/motoriste-sobe.png?fl=nop",
-  "Přísaha": "https://via.placeholder.com/80x80?text=Prisaha",
+  "Přísaha": "https://d15-a.sdn.cz/d_15/c_img_oa_A/kPxAuWMbDHCgJCaBr1Dlg45k/a4de/prisaha.png?fl=nop",
   "SPD": "https://d15-a.sdn.cz/d_15/c_img_oa_A/nO7kYQIzllDshrEDkCDlgmwP/6e8a/spd.png?fl=nop",
   "Spolu": "https://d15-a.sdn.cz/d_15/c_img_oa_A/kPxAuWMbDHBP5fVBqGDlgneB/96db/spolu.png?fl=nop",
   "STAN": "https://d15-a.sdn.cz/d_15/c_img_oa_A/kPxAuWMbDHDRREJBrODlgo7W/4527/starostove.png?fl=nop",
@@ -299,13 +299,33 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
         img.src = "https://d15-a.sdn.cz/d_15/c_img_oa_A/kPxAuWMbDHBP5fVBp7DlgksS/d053/novinky.png?fl=nop";
       });
 
-      return Promise.all([...logoPromises, novinyLogoPromise]);
+      // Načtení loga NMS
+      const nmsLogoPromise = new Promise<HTMLImageElement>((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        
+        // Nejprve nastavíme event listenery
+        img.onload = () => resolve(img);
+        img.onerror = () => {
+          console.error('Nepodařilo se načíst logo NMS');
+          const fallbackImg = new Image();
+          fallbackImg.width = 50;
+          fallbackImg.height = 25;
+          resolve(fallbackImg);
+        };
+        
+        // Poté nastavíme src
+        img.src = "https://d15-a.sdn.cz/d_15/c_img_oa_A/nO7kYQIzllCcIbPDeNDlguXT/13b9/nms.png?fl=nop";
+      });
+
+      return Promise.all([...logoPromises, novinyLogoPromise, nmsLogoPromise]);
     };
     
     // Zpracování obrázků a vykreslení canvasu
     prepareImages().then((logoImages) => {
       const partyLogos = logoImages.slice(0, 5);
       const novinyLogo = logoImages[5];
+      const nmsLogo = logoImages[6];
       
       let yPos = 150;
       const cardMargin = 30;
@@ -471,7 +491,23 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
       ctx.fillStyle = '#666666';
       ctx.font = '14px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText('Novinky.cz ve spolupráci s NMS Market Research', canvas.width / 2, canvas.height - 20);
+      
+      // Text a logo NMS v patičce
+      const footerText = 'Novinky.cz ve spolupráci s';
+      const textWidth = ctx.measureText(footerText).width;
+      
+      // Vykreslení textu
+      ctx.fillText(footerText, (canvas.width - textWidth - 60) / 2, canvas.height - 20);
+      
+      // Vykreslení loga NMS
+      if (nmsLogo.width && nmsLogo.height) {
+        const logoHeight = 25;
+        const logoWidth = (nmsLogo.width / nmsLogo.height) * logoHeight;
+        const logoX = (canvas.width + textWidth) / 2 - 20;
+        const logoY = canvas.height - 32;
+        
+        ctx.drawImage(nmsLogo, logoX, logoY, logoWidth, logoHeight);
+      }
 
       // Convert to image and download
       const dataUrl = canvas.toDataURL('image/png');
@@ -566,7 +602,7 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
         </div>
         
         <div className="footer">
-          <p>Novinky.cz ve spolupráci s NMS Market Research</p>
+          <p>Novinky.cz ve spolupráci s <a href="https://nms.global/cz/" target="_blank" rel="noopener noreferrer"><img src="https://d15-a.sdn.cz/d_15/c_img_oa_A/nO7kYQIzllCcIbPDeNDlguXT/13b9/nms.png?fl=nop" alt="NMS" className="nms-logo" /></a></p>
         </div>
       </div>
     );
@@ -641,7 +677,7 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
         </div>
         
         <div className="footer">
-          <p>Novinky.cz ve spolupráci s NMS Market Research</p>
+          <p>Novinky.cz ve spolupráci s <a href="https://nms.global/cz/" target="_blank" rel="noopener noreferrer"><img src="https://d15-a.sdn.cz/d_15/c_img_oa_A/nO7kYQIzllCcIbPDeNDlguXT/13b9/nms.png?fl=nop" alt="NMS" className="nms-logo" /></a></p>
         </div>
       </div>
     );
@@ -710,8 +746,8 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
       </div>
       
       <div className="footer">
-        <p>Novinky.cz ve spolupráci s NMS Market Research</p>
-      </div>
+        <p>Novinky.cz ve spolupráci s <a href="https://nms.global/cz/" target="_blank" rel="noopener noreferrer"><img src="https://d15-a.sdn.cz/d_15/c_img_oa_A/nO7kYQIzllCcIbPDeNDlguXT/13b9/nms.png?fl=nop" alt="NMS" className="nms-logo" /></a></p>
+        </div>
     </div>
   );
 } 

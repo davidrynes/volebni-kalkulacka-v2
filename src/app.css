@@ -222,6 +222,18 @@ body {
     justify-content: center;
 }
 
+.footer p {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.footer .nms-logo {
+    height: 20px;
+    margin-left: 5px;
+    vertical-align: middle;
+}
+
 /* Crucial Questions Selection */
 .crucial-questions-info {
     background: #fef9e7;
