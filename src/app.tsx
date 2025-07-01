@@ -1,24 +1,9 @@
 import "./app.css"; 
 import { VolebniKalkulacka } from "./components/volebni-kalkulacka";
+import { getOtazky } from "./services/dataService";
 
-// Otázky pro volební kalkulačku
-const otazky = [
-  { id: 1, text: "ČR by měla zastavit dodávku zbraní Ukrajině." }, 
-  { id: 2, text: "Vláda by v letech 2026-2030 měla postupně navýšit výdaje na obranu nejméně na 3 % HDP." }, 
-  { id: 3, text: "Zdanění prázdných a investičních bytů by se mělo zvýšit." }, 
-  { id: 4, text: "Daňová výjimka pro tichá vína a cidery by měla být zrušena." }, 
-  { id: 5, text: "Bylo zrušení superhrubé mzdy, které snížilo zdanění zaměstnanců, chybou, jakou si státní rozpočet nemůže dovolit?" }, 
-  { id: 6, text: "Progresivní zdanění příjmů by mělo být rozšířeno." }, 
-  { id: 7, text: "Nadnárodní korporace by měly být v ČR mnohem více zdaněny." }, 
-  { id: 8, text: "Minimální mzda by měla být vyšší." }, 
-  { id: 9, text: "ČR by měla odložit plánovaný odchod od uhlí." }, 
-  { id: 10, text: "Zvýšení legální migrace je zásadní pro český trh práce a ekonomický růst." }, 
-  { id: 11, text: "Česká televize a Český rozhlas by se měly sloučit a být financovány přímo ze státního rozpočtu, nikoli z koncesionářských poplatků." }, 
-  { id: 12, text: "ČR by měla do roku 2030 přijmout jednotnou evropskou měnu (Euro)." }, 
-  { id: 13, text: "Mělo by být vypsáno referendum o vystoupení ČR z EU." }, 
-  { id: 14, text: "Pacienti by měli mít možnost připlatit si za nadstandardní zdravotní péči v nemocnicích." }, 
-  { id: 15, text: "ČR by měla usilovat o zrušení Green Dealu (Zelené dohody pro Evropu)." }
-];
+// Načtení otázek včetně popisů z dataService
+const otazky = getOtazky();
 
 // Odpovědi politických stran na otázky
 const stranyOdpovedi = {

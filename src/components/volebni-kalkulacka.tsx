@@ -5,6 +5,7 @@ import { saveUserData, detectRegion } from '../services/dataService';
 interface Otazka {
   id: number;
   text: string;
+  popis?: string;
 }
 
 interface StranyOdpovedi {
@@ -91,6 +92,7 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
   const [showCrucialQuestionsSelection, setShowCrucialQuestionsSelection] = useState(false);
   const [detectedRegion, setDetectedRegion] = useState<string | undefined>(undefined);
   const [results, setResults] = useState<Vysledek[]>([]);
+  const [openDetail, setOpenDetail] = useState<number | null>(null);
   const contentAreaRef = useRef<HTMLDivElement>(null);
 
   // Detekce kraje při načtení komponenty
@@ -552,6 +554,11 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
     });
   };
 
+  // Funkce pro přepínání detailu otázky
+  const toggleDetail = (id: number) => {
+    setOpenDetail(openDetail === id ? null : id);
+  };
+
   if (showResults) {
     return (
       <div className="volebni-kalkulacka">
@@ -653,6 +660,20 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
                     <div className="answer-label">
                       Vaše odpověď: {moznostiOdpovedi.find(opt => opt.value === userAnswers[otazka.id])?.label || "Nezodpovězeno"}
                     </div>
+                    {otazka.popis && (
+                      <>
+                        <div 
+                          className="detail-button" 
+                          onClick={() => toggleDetail(otazka.id)}
+                        >
+                          Detail
+                          <span className={`arrow ${openDetail === otazka.id ? 'open' : ''}`}>▼</span>
+                        </div>
+                        <div className={`detail-content ${openDetail === otazka.id ? 'open' : ''}`}>
+                          {otazka.popis}
+                        </div>
+                      </>
+                    )}
                   </label>
                 </div>
               ))}
@@ -705,7 +726,24 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
 
       <div className="content-area" ref={contentAreaRef}>
         <div className="question-slide">
-          <div className="question-text">{currentQuestion?.text}</div>
+          <div className="question-text">
+            {currentQuestion?.text}
+          </div>
+          
+          {currentQuestion?.popis && (
+            <>
+              <div 
+                className="detail-button" 
+                onClick={() => toggleDetail(currentQuestion.id)}
+              >
+                Detail
+                <span className={`arrow ${openDetail === currentQuestion.id ? 'open' : ''}`}>▼</span>
+              </div>
+              <div className={`detail-content ${openDetail === currentQuestion.id ? 'open' : ''}`}>
+                {currentQuestion.popis}
+              </div>
+            </>
+          )}
           
           <div className="options-container">
             {moznostiOdpovedi.map(option => (
@@ -747,7 +785,7 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
       
       <div className="footer">
         <p>Novinky.cz ve spolupráci s <a href="https://nms.global/cz/" target="_blank" rel="noopener noreferrer"><img src="https://d15-a.sdn.cz/d_15/c_img_oa_A/nO7kYQIzllCcIbPDeNDlguXT/13b9/nms.png?fl=nop" alt="NMS" className="nms-logo" /></a></p>
-        </div>
+      </div>
     </div>
   );
 } 

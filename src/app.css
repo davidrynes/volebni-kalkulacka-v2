@@ -252,41 +252,82 @@ body {
 }
 
 .crucial-question-item {
-    padding: 12px;
-    margin-bottom: 8px;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    background: #f9f9f9;
+    border-bottom: 1px solid #eee;
+    padding: 12px 0;
     display: flex;
-    align-items: center;
-    transition: all 0.2s;
+    align-items: flex-start;
+    position: relative;
 }
 
 .crucial-question-item:hover {
-    background: #f0f0f0;
+    background-color: #f8f8f8;
 }
 
 .crucial-question-item.selected {
-    background: #ffe4e6;
-    border-color: #c8102e;
+    background-color: #f0f9ff;
+    border-left: 3px solid #0284c7;
 }
 
 .crucial-question-item input[type="checkbox"] {
     margin-right: 10px;
-    width: 20px;
-    height: 20px;
-    accent-color: #c8102e;
+    margin-top: 3px;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
 }
 
 .crucial-question-item label {
     cursor: pointer;
-    flex: 1;
+    font-size: 14px;
+    position: relative;
+    width: 100%;
 }
 
 .crucial-question-item .answer-label {
-    font-size: 11px;
+    font-size: 12px;
     color: #666;
     margin-top: 4px;
+    margin-bottom: 8px;
+}
+
+/* Styly pro detail v seznamu důležitých otázek */
+.crucial-question-item .detail-button {
+    margin: 8px 0 5px;
+    padding: 4px 10px;
+    font-size: 12px;
+    width: auto;
+    display: inline-flex;
+    background-color: #f5f5f5;
+    border-radius: 8px;
+}
+
+.crucial-question-item .detail-content {
+    margin: 5px 0 10px;
+    font-size: 13px;
+}
+
+/* Info ikona v seznamu důležitých otázek */
+.crucial-question-item .info-icon-container {
+    display: inline-block;
+    position: relative;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+.crucial-question-item .info-tooltip {
+    left: -20px;
+    width: calc(100% + 20px);
+    top: calc(100% + 5px);
+}
+
+/* Mobilní styly pro info ikony v seznamu důležitých otázek */
+@media (max-width: 480px) {
+    .crucial-question-item .info-tooltip {
+        left: 0;
+        top: 20px;
+        width: calc(100vw - 40px);
+        max-width: 280px;
+    }
 }
 
 /* Scroll indicator for crucial questions */
@@ -335,9 +376,116 @@ body {
 
 .question-text {
     font-size: 18px;
-    font-weight: 600;
-    margin-bottom: 25px;
+    font-weight: bold;
+    margin-bottom: 10px;
     line-height: 1.4;
+    padding: 0 20px;
+    position: relative;
+}
+
+/* Styly pro kolapsovací detail */
+.detail-button {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    margin: 0 20px 15px;
+    padding: 8px 15px;
+    background-color: #f5f5f5;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    color: #4b5563;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    width: auto;
+    align-self: flex-start;
+}
+
+.detail-button:hover {
+    background-color: #e5e7eb;
+}
+
+.detail-button .arrow {
+    margin-left: 8px;
+    transition: transform 0.3s ease;
+    font-size: 10px;
+    display: inline-block;
+}
+
+.detail-button .arrow.open {
+    transform: rotate(180deg);
+}
+
+.detail-content {
+    margin: 0 20px 15px;
+    padding: 0;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #334155;
+    max-height: 0;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    opacity: 0;
+    border-width: 0;
+}
+
+.detail-content.open {
+    max-height: 500px;
+    opacity: 1;
+    padding: 12px 15px;
+    border-width: 1px;
+    margin-bottom: 15px;
+}
+
+/* Odstraníme staré styly pro info ikonu a tooltip */
+.info-icon-container,
+.info-icon,
+.info-tooltip,
+.modal-tooltip {
+    display: none;
+}
+
+/* Mobilní styly */
+@media (max-width: 480px) {
+    .detail-button {
+        margin: 0 15px 12px;
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+    
+    .detail-content {
+        margin: 0 15px 12px;
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+    
+    .options-container {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        padding: 0 20px;
+        margin-top: 5px;
+    }
+
+    .option-label {
+        padding: 12px 8px;
+        font-size: 12px;
+        border-radius: 8px;
+        background-color: #f5f5f5;
+        cursor: pointer;
+        transition: background-color 0.2s, transform 0.1s;
+        display: flex;
+        align-items: center;
+        position: relative;
+        margin-bottom: 0;
+        height: 100%;
+        text-align: center;
+        justify-content: center;
+    }
 }
 
 /* Radio Options */
@@ -829,24 +977,25 @@ body {
     
     .options-container {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-        margin-bottom: 20px;
-        width: 100%;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        padding: 0 20px;
     }
     
     .option-label {
-        padding: 12px 6px;
-        font-size: 11px;
-        border-radius: 16px;
-        margin-bottom: 0;
+        padding: 12px 8px;
+        font-size: 12px;
+        border-radius: 8px;
+        background-color: #f5f5f5;
+        cursor: pointer;
+        transition: background-color 0.2s, transform 0.1s;
         display: flex;
         align-items: center;
-        justify-content: flex-start;
-        min-height: 50px;
-        line-height: 1.2;
-        word-break: break-word;
-        box-sizing: border-box;
+        position: relative;
+        margin-bottom: 0;
+        height: 100%;
+        text-align: center;
+        justify-content: center;
     }
     
     .option-label input[type="radio"] {
@@ -971,6 +1120,13 @@ body {
         background: #fff0f0;
         border-color: #c8102e;
         border-width: 2px;
+    }
+
+    .info-tooltip {
+        width: calc(100% - 40px);
+        max-width: 300px;
+        padding: 10px;
+        font-size: 12px;
     }
 }
 
