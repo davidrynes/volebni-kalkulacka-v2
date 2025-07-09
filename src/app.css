@@ -488,11 +488,10 @@ body {
         grid-template-columns: repeat(2, 1fr);
         gap: 15px;
         padding: 0 15px;
-        margin-top: auto;
-        margin-bottom: auto;
+        margin-top: 30px;
         width: calc(100% - 30px);
         box-sizing: border-box;
-        align-content: center;
+        align-content: start;
     }
 
     .option-label {
@@ -995,14 +994,13 @@ body {
     }
     
     .question-slide {
-        padding: 10px;
+        padding: 15px 10px;
         width: 100%;
         max-width: 100%;
         box-sizing: border-box;
         display: flex;
         flex-direction: column;
         flex: 1;
-        min-height: calc(100vh - 200px);
     }
     
     .question-text {
