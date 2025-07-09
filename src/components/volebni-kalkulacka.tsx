@@ -726,8 +726,8 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
 
       <div className="content-area" ref={contentAreaRef}>
         <div className="question-slide">
-          <div className="question-text" style={{border: '2px solid red', backgroundColor: 'yellow'}}>
-            {currentQuestion?.text || `DEBUG: otazky.length=${otazky?.length}, currentQuestionIndex=${currentQuestionIndex}, currentQuestion=${JSON.stringify(currentQuestion)}`}
+          <div className="question-text">
+            {currentQuestion?.text}
           </div>
           
           {currentQuestion?.popis && (

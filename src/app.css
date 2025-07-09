@@ -488,10 +488,10 @@ body {
         grid-template-columns: repeat(2, 1fr);
         gap: 15px;
         padding: 0 15px;
-        margin-top: 15px;
+        margin-top: auto;
+        margin-bottom: auto;
         width: calc(100% - 30px);
         box-sizing: border-box;
-        flex-grow: 1;
         align-content: center;
     }
 
@@ -961,17 +961,12 @@ body {
     .content-area {
         flex: 1;
         overflow-y: auto;
-        padding: 0;
+        padding: 85px 0 55px 0;
         width: 100%;
         box-sizing: border-box;
         -webkit-overflow-scrolling: touch;
         display: flex;
         flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        min-height: calc(100vh - 140px);
-        margin-top: 85px;
-        margin-bottom: 55px;
         overflow-x: hidden;
     }
     
@@ -1000,23 +995,22 @@ body {
     }
     
     .question-slide {
-        padding: 20px 10px;
+        padding: 10px;
         width: 100%;
         max-width: 100%;
         box-sizing: border-box;
         display: flex;
         flex-direction: column;
-        justify-content: center;
-        align-items: stretch;
         flex: 1;
+        min-height: calc(100vh - 200px);
     }
     
     .question-text {
         font-size: 17px;
         font-weight: 600;
-        margin-bottom: 25px;
+        margin-bottom: 20px;
         line-height: 1.4;
-        padding: 0 5px;
+        padding: 0 10px;
         color: #1a1a1a;
         text-align: center;
         flex-shrink: 0;
