@@ -727,7 +727,11 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
       <div className="content-area" ref={contentAreaRef}>
         <div className="question-slide">
           <div className="question-text">
-            {currentQuestion?.text}
+            {currentQuestion?.text || "CHYBA: Otázka se nenačetla"}
+          </div>
+          {/* Debug info */}
+          <div style={{fontSize: '12px', color: 'red', padding: '5px'}}>
+            Debug: currentQuestionIndex={currentQuestionIndex}, totalQuestions={totalQuestions}, currentQuestion exists={!!currentQuestion}
           </div>
           
           {currentQuestion?.popis && (
