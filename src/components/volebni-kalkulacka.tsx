@@ -226,12 +226,17 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
   const downloadResults = () => {
     if (!results.length) return;
     
+    console.log('Začínám stahování výsledků...');
+    
     const canvas = document.createElement('canvas');
     canvas.width = 1080;
     canvas.height = 1350;
     const ctx = canvas.getContext('2d');
     
-    if (!ctx) return;
+    if (!ctx) {
+      console.error('Nepodařilo se vytvořit canvas context');
+      return;
+    }
 
     // Background
     ctx.fillStyle = '#ffffff';
@@ -256,75 +261,51 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
     const date = new Date().toLocaleDateString('cs-CZ');
     ctx.fillText(`Vyplněno: ${date}`, canvas.width - 50, 120);
 
-    // Příprava obrázků s event listenery
+    // Příprava obrázků s lepším error handlingem
     const prepareImages = () => {
-      // Načtení log stran
-      const logoPromises = results.slice(0, 5).map((result) => {
+      console.log('Načítám obrázky...');
+      
+      // Načtení log stran s timeout
+      const logoPromises = results.slice(0, 5).map((result, index) => {
         return new Promise<HTMLImageElement>((resolve) => {
           const img = new Image();
           img.crossOrigin = 'anonymous';
           
-          // Nejprve nastavíme event listenery
-          img.onload = () => resolve(img);
+          const timeout = setTimeout(() => {
+            console.warn(`Timeout při načítání loga pro ${result.strana}`);
+            const fallbackImg = new Image();
+            fallbackImg.width = 80;
+            fallbackImg.height = 80;
+            resolve(fallbackImg);
+          }, 3000);
+          
+          img.onload = () => {
+            clearTimeout(timeout);
+            console.log(`Logo načteno: ${result.strana}`);
+            resolve(img);
+          };
+          
           img.onerror = () => {
+            clearTimeout(timeout);
+            console.warn(`Chyba při načítání loga pro ${result.strana}`);
             const fallbackImg = new Image();
             fallbackImg.width = 80;
             fallbackImg.height = 80;
             resolve(fallbackImg);
           };
           
-          // Poté nastavíme src
-          const logoPath = getStranaLogo(result.strana);
+          // Použijeme lokální loga místo externích URL
+          const logoPath = `/loga/${result.strana.toLowerCase().replace(/[^a-z0-9]/g, '')}.png`;
           img.src = logoPath;
         });
       });
 
-      // Načtení loga Novinky.cz
-      const novinyLogoPromise = new Promise<HTMLImageElement>((resolve) => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        
-        // Nejprve nastavíme event listenery
-        img.onload = () => resolve(img);
-        img.onerror = () => {
-          console.error('Nepodařilo se načíst logo Novinky.cz');
-          const fallbackImg = new Image();
-          fallbackImg.width = 200;
-          fallbackImg.height = 40;
-          resolve(fallbackImg);
-        };
-        
-        // Poté nastavíme src
-        img.src = "https://d15-a.sdn.cz/d_15/c_img_oa_A/kPxAuWMbDHBP5fVBp7DlgksS/d053/novinky.png?fl=nop";
-      });
-
-      // Načtení loga NMS
-      const nmsLogoPromise = new Promise<HTMLImageElement>((resolve) => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        
-        // Nejprve nastavíme event listenery
-        img.onload = () => resolve(img);
-        img.onerror = () => {
-          console.error('Nepodařilo se načíst logo NMS');
-          const fallbackImg = new Image();
-          fallbackImg.width = 50;
-          fallbackImg.height = 25;
-          resolve(fallbackImg);
-        };
-        
-        // Poté nastavíme src
-        img.src = "https://d15-a.sdn.cz/d_15/c_img_oa_A/nO7kYQIzllCcIbPDeNDlguXT/13b9/nms.png?fl=nop";
-      });
-
-      return Promise.all([...logoPromises, novinyLogoPromise, nmsLogoPromise]);
+      return Promise.all(logoPromises);
     };
     
-    // Zpracování obrázků a vykreslení canvasu
-    prepareImages().then((logoImages) => {
-      const partyLogos = logoImages.slice(0, 5);
-      const novinyLogo = logoImages[5];
-      const nmsLogo = logoImages[6];
+    // Zpracování bez načítání externích obrázků pro rychlejší stahování
+    const renderCanvas = () => {
+      console.log('Vykresluji canvas...');
       
       let yPos = 150;
       const cardMargin = 30;
@@ -364,28 +345,23 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
           ctx.fillRect(leftMargin, yPos, 4, cardHeight);
         }
         
-        // Logo strany - zachování poměru stran
-        const logo = partyLogos[index];
-        const logoSize = 100;
-        const logoX = leftMargin + 30;
+        // Místo loga - barevný kruh s iniciály
+        const logoSize = 80;
+        const logoX = leftMargin + 50;
         const logoY = yPos + (cardHeight - logoSize) / 2;
         
-        if (logo.width && logo.height) {
-          // Výpočet rozměrů pro zachování poměru stran
-          let drawWidth, drawHeight, offsetX = 0, offsetY = 0;
-          
-          if (logo.width > logo.height) {
-            drawWidth = logoSize;
-            drawHeight = (logo.height / logo.width) * logoSize;
-            offsetY = (logoSize - drawHeight) / 2;
-          } else {
-            drawHeight = logoSize;
-            drawWidth = (logo.width / logo.height) * logoSize;
-            offsetX = (logoSize - drawWidth) / 2;
-          }
-          
-          ctx.drawImage(logo, logoX + offsetX, logoY + offsetY, drawWidth, drawHeight);
-        }
+        // Kruh pro logo
+        ctx.fillStyle = stranyBarvy[result.strana] || '#1976d2';
+        ctx.beginPath();
+        ctx.arc(logoX + logoSize/2, logoY + logoSize/2, logoSize/2, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // Iniciály strany
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 24px Arial';
+        ctx.textAlign = 'center';
+        const initials = result.strana.split(' ').map(word => word[0]).join('').substring(0, 3);
+        ctx.fillText(initials, logoX + logoSize/2, logoY + logoSize/2 + 8);
 
         // Pořadí a název strany
         ctx.fillStyle = '#1a1a1a';
@@ -397,7 +373,10 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
         ctx.font = '18px Arial';
         ctx.fillStyle = '#666666';
         const popis = stranyPopis[result.strana] || `${result.strana} je politická strana.`;
-        ctx.fillText(popis, leftMargin + 160, yPos + 75);
+        // Zkrátíme popis pokud je příliš dlouhý
+        const maxLength = 80;
+        const shortPopis = popis.length > maxLength ? popis.substring(0, maxLength) + '...' : popis;
+        ctx.fillText(shortPopis, leftMargin + 160, yPos + 75);
 
         // Progress bar
         const progressBarWidth = 600;
@@ -405,53 +384,15 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
         const progressBarX = leftMargin + 160;
         const progressBarY = yPos + 120;
         
-        // Pozadí progress baru - zaoblené rohy
+        // Pozadí progress baru
         ctx.fillStyle = '#f0f0f0';
-        const progressRadius = 5;
-        ctx.beginPath();
-        ctx.moveTo(progressBarX + progressRadius, progressBarY);
-        ctx.lineTo(progressBarX + progressBarWidth - progressRadius, progressBarY);
-        ctx.arcTo(progressBarX + progressBarWidth, progressBarY, progressBarX + progressBarWidth, progressBarY + progressRadius, progressRadius);
-        ctx.lineTo(progressBarX + progressBarWidth, progressBarY + progressBarHeight - progressRadius);
-        ctx.arcTo(progressBarX + progressBarWidth, progressBarY + progressBarHeight, progressBarX + progressBarWidth - progressRadius, progressBarY + progressBarHeight, progressRadius);
-        ctx.lineTo(progressBarX + progressRadius, progressBarY + progressBarHeight);
-        ctx.arcTo(progressBarX, progressBarY + progressBarHeight, progressBarX, progressBarY + progressBarHeight - progressRadius, progressRadius);
-        ctx.lineTo(progressBarX, progressBarY + progressRadius);
-        ctx.arcTo(progressBarX, progressBarY, progressBarX + progressRadius, progressBarY, progressRadius);
-        ctx.closePath();
-        ctx.fill();
+        ctx.fillRect(progressBarX, progressBarY, progressBarWidth, progressBarHeight);
         
-        // Vyplněný progress bar - zaoblené rohy
+        // Vyplněný progress bar
         const filledWidth = (result.shoda / 100) * progressBarWidth;
         if (filledWidth > 0) {
           ctx.fillStyle = stranyBarvy[result.strana] || '#1976d2';
-          ctx.beginPath();
-          
-          // Pro velmi krátké pruhy, které by byly kratší než poloměr, upravit vykreslování
-          if (filledWidth < progressRadius * 2) {
-            const adjustedRadius = filledWidth / 2;
-            ctx.moveTo(progressBarX + adjustedRadius, progressBarY);
-            ctx.arcTo(progressBarX + filledWidth, progressBarY, progressBarX + filledWidth, progressBarY + progressRadius, adjustedRadius);
-            ctx.lineTo(progressBarX + filledWidth, progressBarY + progressBarHeight - adjustedRadius);
-            ctx.arcTo(progressBarX + filledWidth, progressBarY + progressBarHeight, progressBarX + adjustedRadius, progressBarY + progressBarHeight, adjustedRadius);
-            ctx.lineTo(progressBarX + adjustedRadius, progressBarY + progressBarHeight);
-            ctx.arcTo(progressBarX, progressBarY + progressBarHeight, progressBarX, progressBarY + progressBarHeight - adjustedRadius, adjustedRadius);
-            ctx.lineTo(progressBarX, progressBarY + adjustedRadius);
-            ctx.arcTo(progressBarX, progressBarY, progressBarX + adjustedRadius, progressBarY, adjustedRadius);
-          } else {
-            ctx.moveTo(progressBarX + progressRadius, progressBarY);
-            ctx.lineTo(progressBarX + filledWidth - progressRadius, progressBarY);
-            ctx.arcTo(progressBarX + filledWidth, progressBarY, progressBarX + filledWidth, progressBarY + progressRadius, progressRadius);
-            ctx.lineTo(progressBarX + filledWidth, progressBarY + progressBarHeight - progressRadius);
-            ctx.arcTo(progressBarX + filledWidth, progressBarY + progressBarHeight, progressBarX + filledWidth - progressRadius, progressBarY + progressBarHeight, progressRadius);
-            ctx.lineTo(progressBarX + progressRadius, progressBarY + progressBarHeight);
-            ctx.arcTo(progressBarX, progressBarY + progressBarHeight, progressBarX, progressBarY + progressBarHeight - progressRadius, progressRadius);
-            ctx.lineTo(progressBarX, progressBarY + progressRadius);
-            ctx.arcTo(progressBarX, progressBarY, progressBarX + progressRadius, progressBarY, progressRadius);
-          }
-          
-          ctx.closePath();
-          ctx.fill();
+          ctx.fillRect(progressBarX, progressBarY, filledWidth, progressBarHeight);
         }
         
         // Procento shody
@@ -467,22 +408,6 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
         yPos += cardHeight + cardMargin;
       });
       
-      // Logo Novinky.cz nad patičkou
-      if (novinyLogo.width && novinyLogo.height) {
-        const logoWidth = 200;
-        const logoHeight = (novinyLogo.height / novinyLogo.width) * logoWidth;
-        const logoX = (canvas.width - logoWidth) / 2;
-        
-        // Vypočítáme pozici loga, aby bylo uprostřed volného prostoru
-        // Zjistíme, kde končí poslední karta a kde začíná patička
-        const lastCardBottom = yPos - cardMargin; // yPos již obsahuje pozici pro další kartu, odečteme margin
-        const footerTop = canvas.height - 50; // Patička má výšku 50px
-        const availableSpace = footerTop - lastCardBottom;
-        const logoY = lastCardBottom + (availableSpace - logoHeight) / 2;
-        
-        ctx.drawImage(novinyLogo, logoX, logoY, logoWidth, logoHeight);
-      }
-      
       // Footer
       ctx.fillStyle = '#f5f5f5';
       ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
@@ -490,31 +415,17 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
       ctx.fillStyle = '#666666';
       ctx.font = '14px Arial';
       ctx.textAlign = 'center';
-      
-      // Text a logo NMS v patičce
-      const footerText = 'Novinky.cz ve spolupráci s';
-      const textWidth = ctx.measureText(footerText).width;
-      
-      // Vykreslení textu
-      ctx.fillText(footerText, (canvas.width - textWidth - 60) / 2, canvas.height - 20);
-      
-      // Vykreslení loga NMS
-      if (nmsLogo.width && nmsLogo.height) {
-        const logoHeight = 25;
-        const logoWidth = (nmsLogo.width / nmsLogo.height) * logoHeight;
-        const logoX = (canvas.width + textWidth) / 2 - 20;
-        const logoY = canvas.height - 32;
-        
-        ctx.drawImage(nmsLogo, logoX, logoY, logoWidth, logoHeight);
-      }
+      ctx.fillText('Novinky.cz ve spolupráci s NMS', canvas.width / 2, canvas.height - 20);
 
       // Convert to image and download
+      console.log('Konvertuji na obrázek...');
       const dataUrl = canvas.toDataURL('image/png');
       
       // Detekce, zda jsme v iframe/embedded prostředí
       const isEmbedded = window !== window.parent;
       
       if (isEmbedded) {
+        console.log('Posílám zprávu rodičovskému oknu...');
         // Komunikace s rodičovským oknem pro stažení
         window.parent.postMessage({
           type: 'downloadImage',
@@ -522,33 +433,33 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
           filename: 'volebni-kalkulacka-vysledky.png'
         }, '*');
 
-        // Zobrazení zpětné vazby uživateli namísto alert - vytvoření informačního prvku
+        // Zobrazení zpětné vazby uživateli
         const downloadInfo = document.createElement('div');
         downloadInfo.className = 'download-notification';
         downloadInfo.innerHTML = 'Obrázek se připravuje ke stažení...';
-        downloadInfo.style.position = 'fixed';
-        downloadInfo.style.bottom = '80px';
-        downloadInfo.style.left = '50%';
-        downloadInfo.style.transform = 'translateX(-50%)';
-        downloadInfo.style.background = '#333';
-        downloadInfo.style.color = 'white';
-        downloadInfo.style.padding = '10px 20px';
-        downloadInfo.style.borderRadius = '5px';
-        downloadInfo.style.zIndex = '1000';
-        
         document.body.appendChild(downloadInfo);
         
         setTimeout(() => {
-          document.body.removeChild(downloadInfo);
+          if (document.body.contains(downloadInfo)) {
+            document.body.removeChild(downloadInfo);
+          }
         }, 3000);
       } else {
+        console.log('Stahuji přímo...');
         // Standardní stažení pro non-iframe
         const link = document.createElement('a');
         link.download = 'volebni-kalkulacka-vysledky.png';
         link.href = dataUrl;
+        document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
       }
-    });
+      
+      console.log('Stahování dokončeno!');
+    };
+    
+    // Spustíme renderování přímo bez čekání na externí obrázky
+    renderCanvas();
   };
 
   // Funkce pro přepínání detailu otázky
