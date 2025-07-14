@@ -24,17 +24,22 @@
     .container {
       max-width: 600px;
       margin: 0 auto;
-      padding: 20px;
+      padding: 0;
     }
     iframe {
       width: 100%;
-      height: 600px;
+      height: 100vh;
+      min-height: 800px;
       border: none;
-      overflow: hidden;
+      overflow: auto;
     }
     @media (max-width: 480px) {
       iframe {
-        height: 100vw; /* Poměr 1:1 na mobilních zařízeních */
+        height: 100vh;
+        min-height: 100vh;
+      }
+      .container {
+        padding: 0;
       }
     }
   </style>
