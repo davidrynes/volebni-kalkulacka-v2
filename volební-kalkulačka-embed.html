@@ -52,25 +52,38 @@
   <script>
     // Funkce pro přijetí zprávy z iframe
     window.addEventListener('message', function(event) {
-      // Kontrola původu zprávy
-      if (event.origin === window.location.origin) {
-        // Zpracování zprávy podle typu
-        if (event.data && event.data.type === 'resize') {
+      console.log('Přijata zpráva z iframe:', event.data, 'origin:', event.origin);
+      
+      // Zpracování zprávy podle typu - odebereme kontrolu origin pro iframe komunikaci
+      if (event.data && typeof event.data === 'object') {
+        if (event.data.type === 'resize') {
           // Změna velikosti iframe
+          console.log('Zpracovávám resize zprávu');
           const iframe = document.getElementById('volebniKalkulacka');
           if (iframe) {
             iframe.style.height = event.data.height + 'px';
             iframe.style.width = event.data.width + 'px';
           }
-        } else if (event.data && event.data.type === 'downloadImage') {
+        } else if (event.data.type === 'downloadImage') {
           // Stažení obrázku
-          const { dataUrl, filename } = event.data;
-          const link = document.createElement('a');
-          link.href = dataUrl;
-          link.download = filename;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
+          console.log('Zpracovávám downloadImage zprávu');
+          try {
+            const { dataUrl, filename } = event.data;
+            if (dataUrl && filename) {
+              const link = document.createElement('a');
+              link.href = dataUrl;
+              link.download = filename;
+              link.style.display = 'none';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              console.log('Obrázek byl úspěšně stažen:', filename);
+            } else {
+              console.error('Chybí dataUrl nebo filename v zprávě');
+            }
+          } catch (error) {
+            console.error('Chyba při stahování obrázku:', error);
+          }
         }
       }
     });

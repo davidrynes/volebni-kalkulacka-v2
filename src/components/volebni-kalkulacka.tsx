@@ -426,24 +426,44 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
       
       if (isEmbedded) {
         console.log('Posílám zprávu rodičovskému oknu...');
-        // Komunikace s rodičovským oknem pro stažení
-        window.parent.postMessage({
-          type: 'downloadImage',
-          dataUrl: dataUrl,
-          filename: 'volebni-kalkulacka-vysledky.png'
-        }, '*');
+        try {
+          // Komunikace s rodičovským oknem pro stažení
+          window.parent.postMessage({
+            type: 'downloadImage',
+            dataUrl: dataUrl,
+            filename: 'volebni-kalkulacka-vysledky.png'
+          }, '*');
+          console.log('Zpráva byla odeslána rodičovskému oknu');
 
-        // Zobrazení zpětné vazby uživateli
-        const downloadInfo = document.createElement('div');
-        downloadInfo.className = 'download-notification';
-        downloadInfo.innerHTML = 'Obrázek se připravuje ke stažení...';
-        document.body.appendChild(downloadInfo);
-        
-        setTimeout(() => {
-          if (document.body.contains(downloadInfo)) {
-            document.body.removeChild(downloadInfo);
-          }
-        }, 3000);
+          // Zobrazení zpětné vazby uživateli
+          const downloadInfo = document.createElement('div');
+          downloadInfo.className = 'download-notification';
+          downloadInfo.innerHTML = 'Obrázek se připravuje ke stažení...';
+          document.body.appendChild(downloadInfo);
+          
+          // Fallback - pokud se nestáhne za 5 sekund, nabídneme přímé stažení
+          setTimeout(() => {
+            if (document.body.contains(downloadInfo)) {
+              downloadInfo.innerHTML = 'Nepodařilo se stáhnout přes embed. <a href="' + dataUrl + '" download="volebni-kalkulacka-vysledky.png" style="color: #c8102e; text-decoration: underline;">Klikněte zde pro stažení</a>';
+              
+              // Automatické odstranění po dalších 10 sekundách
+              setTimeout(() => {
+                if (document.body.contains(downloadInfo)) {
+                  document.body.removeChild(downloadInfo);
+                }
+              }, 10000);
+            }
+          }, 5000);
+        } catch (error) {
+          console.error('Chyba při odesílání zprávy rodičovskému oknu:', error);
+          // Fallback na přímé stažení
+          const link = document.createElement('a');
+          link.download = 'volebni-kalkulacka-vysledky.png';
+          link.href = dataUrl;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
       } else {
         console.log('Stahuji přímo...');
         // Standardní stažení pro non-iframe
