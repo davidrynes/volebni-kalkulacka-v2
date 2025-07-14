@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'preact/hooks';
-import { saveUserData, detectRegion } from '../services/dataService';
 
 // Definice typů
 interface Otazka {
@@ -87,21 +86,9 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
   const [crucialQuestions, setCrucialQuestions] = useState<Set<number>>(new Set());
   const [showResults, setShowResults] = useState(false);
   const [showCrucialQuestionsSelection, setShowCrucialQuestionsSelection] = useState(false);
-  const [detectedRegion, setDetectedRegion] = useState<string | undefined>(undefined);
   const [results, setResults] = useState<Vysledek[]>([]);
   const [openDetail, setOpenDetail] = useState<number | null>(null);
   const contentAreaRef = useRef<HTMLDivElement>(null);
-
-  // Detekce kraje při načtení komponenty
-  useEffect(() => {
-    detectRegion()
-      .then(region => {
-        setDetectedRegion(region);
-      })
-      .catch(error => {
-        // Tiché zpracování chyby
-      });
-  }, []);
 
   const currentQuestion = otazky?.[currentQuestionIndex];
   
@@ -175,12 +162,6 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
 
     setResults(results.sort((a, b) => b.shoda - a.shoda));
     setShowResults(true);
-    
-    // Uložení dat uživatele na pozadí bez zobrazování stavu
-    saveUserData(userAnswers, Array.from(crucialQuestions), detectedRegion)
-      .catch(error => {
-        // Tiché zpracování chyby
-      });
     
     if (onSubmit) {
       onSubmit(userAnswers, Array.from(crucialQuestions));
