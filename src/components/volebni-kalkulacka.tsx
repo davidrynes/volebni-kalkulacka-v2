@@ -40,7 +40,6 @@ const stranyPopis: Record<string, string> = {
   "STAN": "Starostové a nezávislí je středopravicová politická strana vycházející z komunální politiky.",
   "Stačilo!": "Stačilo! je levicové politické hnutí vedené Kateřinou Konečnou.",
   "Motoristé": "Motoristé sobě je politické hnutí zaměřené na práva řidičů a dopravní problematiku.",
-  "SocDem": "Sociální demokracie je levicová politická strana s důrazem na sociální práva.",
   "Spolu": "SPOLU je koalice stran ODS, KDU-ČSL a TOP 09 s konzervativně-liberální orientací.",
   "ANO": "Hnutí ANO je centristické politické hnutí založené Andrejem Babišem.",
 };
@@ -53,7 +52,6 @@ const stranyBarvy: Record<string, string> = {
   "STAN": "#e83a66",
   "Stačilo!": "#cc0033",
   "Motoristé": "#7699de",
-  "SocDem": "#ff6600",
   "Spolu": "#1565c0",
   "ANO": "#33cccc",
 };
@@ -68,7 +66,6 @@ const stranyLoga: Record<string, string> = {
   "Spolu": "https://d15-a.sdn.cz/d_15/c_img_oa_A/kPxAuWMbDHBP5fVBqGDlgneB/96db/spolu.png?fl=nop",
   "STAN": "https://d15-a.sdn.cz/d_15/c_img_oa_A/kPxAuWMbDHDRREJBrODlgo7W/4527/starostove.png?fl=nop",
   "Stačilo!": "https://d15-a.sdn.cz/d_15/c_img_oa_A/nO7kYQIzllCHfwdDe2DlgoDC/061c/stacilo.png?fl=nop",
-  "SocDem": "https://d15-a.sdn.cz/d_15/c_img_oa_A/kPxAuWMbDHCqtaXBn5DlgmJY/d2be/socdem.png?fl=nop",
 };
 
 // Funkce pro získání loga strany
