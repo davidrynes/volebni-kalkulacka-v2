@@ -39,7 +39,7 @@ const stranyPopis: Record<string, string> = {
   "STAN": "Starostové a nezávislí je středopravicová politická strana vycházející z komunální politiky.",
   "Stačilo!": "Stačilo! je levicové politické hnutí vedené Kateřinou Konečnou.",
   "Motoristé": "Motoristé sobě je politické hnutí zaměřené na práva řidičů a dopravní problematiku.",
-  "Spolu": "SPOLU je koalice stran ODS, KDU-ČSL a TOP 09 s konzervativně-liberální orientací.",
+  "Spolu": "SPOLU je středopravicová koalice stran ODS, KDU-ČSL a TOP 09.",
   "ANO": "Hnutí ANO je centristické politické hnutí založené Andrejem Babišem.",
 };
 
@@ -223,78 +223,98 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Header
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, 100);
-    
-    ctx.fillStyle = '#1a1a1a';
-    ctx.font = 'bold 40px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('Volební kalkulačka 2025', canvas.width / 2, 50);
-    
-    ctx.font = '24px Arial';
-    ctx.fillText('Vaše výsledky', canvas.width / 2, 85);
-
-    // Date
-    ctx.fillStyle = '#666666';
-    ctx.font = '16px Arial';
-    ctx.textAlign = 'right';
-    const date = new Date().toLocaleDateString('cs-CZ');
-    ctx.fillText(`Vyplněno: ${date}`, canvas.width - 50, 120);
-
-    // Příprava obrázků s lepším error handlingem
-    const prepareImages = () => {
+    // Načtení všech potřebných obrázků
+    const loadImages = async () => {
       console.log('Načítám obrázky...');
       
-      // Načtení log stran s timeout
-      const logoPromises = results.slice(0, 5).map((result, index) => {
-        return new Promise<HTMLImageElement>((resolve) => {
-          const img = new Image();
-          img.crossOrigin = 'anonymous';
-          
-          const timeout = setTimeout(() => {
-            console.warn(`Timeout při načítání loga pro ${result.strana}`);
-            const fallbackImg = new Image();
-            fallbackImg.width = 80;
-            fallbackImg.height = 80;
-            resolve(fallbackImg);
-          }, 3000);
-          
-          img.onload = () => {
-            clearTimeout(timeout);
-            console.log(`Logo načteno: ${result.strana}`);
-            resolve(img);
-          };
-          
-          img.onerror = () => {
-            clearTimeout(timeout);
-            console.warn(`Chyba při načítání loga pro ${result.strana}`);
-            const fallbackImg = new Image();
-            fallbackImg.width = 80;
-            fallbackImg.height = 80;
-            resolve(fallbackImg);
-          };
-          
-          // Použijeme lokální loga místo externích URL
-          const logoPath = `/loga/${result.strana.toLowerCase().replace(/[^a-z0-9]/g, '')}.png`;
-          img.src = logoPath;
-        });
+      const imagePromises: Promise<{ key: string; img: HTMLImageElement }>[] = [];
+      
+      // Načteme loga stran pro výsledky
+      results.slice(0, 5).forEach((result) => {
+        const logoUrl = stranyLoga[result.strana];
+        if (logoUrl) {
+          const promise = new Promise<{ key: string; img: HTMLImageElement }>((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => resolve({ key: result.strana, img });
+            img.onerror = () => reject(new Error(`Nepodařilo se načíst logo pro ${result.strana}`));
+            img.src = logoUrl;
+          });
+          imagePromises.push(promise);
+        }
       });
-
-      return Promise.all(logoPromises);
+      
+      // Načteme NMS logo
+      const nmsLogoPromise = new Promise<{ key: string; img: HTMLImageElement }>((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve({ key: 'nms', img });
+        img.onerror = () => reject(new Error('Nepodařilo se načíst NMS logo'));
+        img.src = 'https://d15-a.sdn.cz/d_15/c_img_oa_A/nO7kYQIzllCcIbPDeNDlguXT/13b9/nms.png?fl=nop';
+      });
+      imagePromises.push(nmsLogoPromise);
+      
+      // Načteme Novinky logo
+      const novinkyLogoPromise = new Promise<{ key: string; img: HTMLImageElement }>((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve({ key: 'novinky', img });
+        img.onerror = () => reject(new Error('Nepodařilo se načíst Novinky logo'));
+        img.src = 'https://d15-a.sdn.cz/d_15/c_img_ob_A/nPTQKDwGerDZzxhButDwDy0B/33c0/logo-novinky.png?fl=nop';
+      });
+      imagePromises.push(novinkyLogoPromise);
+      
+      try {
+        const loadedImages = await Promise.allSettled(imagePromises);
+        const images: Record<string, HTMLImageElement> = {};
+        
+        loadedImages.forEach((result) => {
+          if (result.status === 'fulfilled') {
+            images[result.value.key] = result.value.img;
+          } else {
+            console.warn('Nepodařilo se načíst obrázek:', result.reason);
+          }
+        });
+        
+        return images;
+      } catch (error) {
+        console.error('Chyba při načítání obrázků:', error);
+        return {};
+      }
     };
-    
-    // Zpracování bez načítání externích obrázků pro rychlejší stahování
-    const renderCanvas = () => {
+
+    const renderCanvas = (images: Record<string, HTMLImageElement>) => {
       console.log('Vykresluji canvas...');
       
-      let yPos = 150;
-      const cardMargin = 30;
+      // Definice konstant pro layout
+      const numberOfResults = Math.min(results.length, 5); // max 5 stran pro původní rozměry
       const cardHeight = 180;
+      const cardMargin = 30;
+      
+      // Header (bez loga Novinek - jen v patičce)
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, 120);
+      
+      ctx.fillStyle = '#1a1a1a';
+      ctx.font = 'bold 40px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('Volební kalkulačka 2025', canvas.width / 2, 50);
+      
+      ctx.font = '24px Arial';
+      ctx.fillText('Vaše výsledky', canvas.width / 2, 85);
+
+      // Date
+      ctx.fillStyle = '#666666';
+      ctx.font = '16px Arial';
+      ctx.textAlign = 'right';
+      const date = new Date().toLocaleDateString('cs-CZ');
+      ctx.fillText(`Vyplněno: ${date}`, canvas.width - 50, 110);
+      
+      let yPos = 150;
       const cardWidth = 980;
       const leftMargin = (canvas.width - cardWidth) / 2;
 
-      results.slice(0, 5).forEach((result, index) => {
+      results.slice(0, numberOfResults).forEach((result, index) => {
         // Karta strany
         ctx.fillStyle = '#ffffff';
         ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
@@ -326,44 +346,103 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
           ctx.fillRect(leftMargin, yPos, 4, cardHeight);
         }
         
-        // Místo loga - barevný kruh s iniciály
+        // Logo strany (stejné jako na webu)
         const logoSize = 80;
-        const logoX = leftMargin + 50;
-        const logoY = yPos + (cardHeight - logoSize) / 2;
+        const logoX = leftMargin + 40;
+        const logoY = yPos + 20;
         
-        // Kruh pro logo
-        ctx.fillStyle = stranyBarvy[result.strana] || '#1976d2';
-        ctx.beginPath();
-        ctx.arc(logoX + logoSize/2, logoY + logoSize/2, logoSize/2, 0, 2 * Math.PI);
-        ctx.fill();
-        
-        // Iniciály strany
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 24px Arial';
-        ctx.textAlign = 'center';
-        const initials = result.strana.split(' ').map(word => word[0]).join('').substring(0, 3);
-        ctx.fillText(initials, logoX + logoSize/2, logoY + logoSize/2 + 8);
+        if (images[result.strana]) {
+          // Bílé pozadí pro logo
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(logoX, logoY, logoSize, logoSize);
+          
+          // Jemný stín kolem loga
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+          ctx.shadowBlur = 2;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 1;
+          ctx.fillRect(logoX, logoY, logoSize, logoSize);
+          ctx.shadowColor = 'transparent';
+          ctx.shadowBlur = 0;
+          
+          // Vykreslíme logo s malým paddingem (jako na webu)
+          const padding = 8;
+          const img = images[result.strana];
+          const imgAspect = img.width / img.height;
+          const availableSize = logoSize - (padding * 2);
+          
+          let drawWidth, drawHeight, drawX, drawY;
+          
+          if (imgAspect > 1) {
+            // Širší obrázek
+            drawWidth = availableSize;
+            drawHeight = availableSize / imgAspect;
+          } else {
+            // Vyšší obrázek
+            drawHeight = availableSize;
+            drawWidth = availableSize * imgAspect;
+          }
+          
+          drawX = logoX + (logoSize - drawWidth) / 2;
+          drawY = logoY + (logoSize - drawHeight) / 2;
+          
+          ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+        } else {
+          // Fallback - barevný čtverec s iniciály (stejně jako na webu)
+          ctx.fillStyle = stranyBarvy[result.strana] || '#1976d2';
+          ctx.fillRect(logoX, logoY, logoSize, logoSize);
+          
+          // Iniciály strany
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 24px Arial';
+          ctx.textAlign = 'center';
+          const initials = result.strana.split(' ').map(word => word[0]).join('').substring(0, 3);
+          ctx.fillText(initials, logoX + logoSize/2, logoY + logoSize/2 + 8);
+        }
 
-        // Pořadí a název strany
+        // Pořadí a název strany (zarovnané s logem)
         ctx.fillStyle = '#1a1a1a';
         ctx.textAlign = 'left';
         ctx.font = 'bold 28px Arial';
-        ctx.fillText(`${index + 1}. ${result.strana}`, leftMargin + 160, yPos + 40);
+        ctx.fillText(`${index + 1}. ${result.strana}`, leftMargin + 140, yPos + 45);
         
-        // Popis strany
+        // Popis strany (na dva řádky)
         ctx.font = '18px Arial';
         ctx.fillStyle = '#666666';
         const popis = stranyPopis[result.strana] || `${result.strana} je politická strana.`;
-        // Zkrátíme popis pokud je příliš dlouhý
-        const maxLength = 80;
-        const shortPopis = popis.length > maxLength ? popis.substring(0, maxLength) + '...' : popis;
-        ctx.fillText(shortPopis, leftMargin + 160, yPos + 75);
+        
+        // Rozdělíme popis na dva řádky
+        const maxWidth = 450; // maximální šířka textu
+        const words = popis.split(' ');
+        let firstLine = '';
+        let secondLine = '';
+        
+        // Najdeme optimální rozdělení
+        for (let i = 0; i < words.length; i++) {
+          const testLine = firstLine + (firstLine ? ' ' : '') + words[i];
+          const metrics = ctx.measureText(testLine);
+          
+          if (metrics.width <= maxWidth || firstLine === '') {
+            firstLine = testLine;
+          } else {
+            secondLine = words.slice(i).join(' ');
+            break;
+          }
+        }
+        
+        // Vykreslíme první řádek
+        ctx.fillText(firstLine, leftMargin + 140, yPos + 70);
+        
+        // Vykreslíme druhý řádek (pokud existuje)
+        if (secondLine) {
+          ctx.fillText(secondLine, leftMargin + 140, yPos + 95);
+        }
 
-        // Progress bar
-        const progressBarWidth = 600;
+        // Progress bar (posunutý níže kvůli dvouřádkovému popisu)
+        const progressBarWidth = 500;
         const progressBarHeight = 12;
-        const progressBarX = leftMargin + 160;
-        const progressBarY = yPos + 120;
+        const progressBarX = leftMargin + 140;
+        const progressBarY = yPos + 125;
         
         // Pozadí progress baru
         ctx.fillStyle = '#f0f0f0';
@@ -376,28 +455,52 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
           ctx.fillRect(progressBarX, progressBarY, filledWidth, progressBarHeight);
         }
         
-        // Procento shody
+        // Procento shody (zarovnané vpravo)
         ctx.fillStyle = '#1a1a1a';
         ctx.font = 'bold 36px Arial';
         ctx.textAlign = 'right';
-        ctx.fillText(`${result.shoda}%`, leftMargin + cardWidth - 30, yPos + 60);
+        ctx.fillText(`${result.shoda}%`, leftMargin + cardWidth - 40, yPos + 65);
         
         ctx.fillStyle = '#999999';
         ctx.font = '16px Arial';
-        ctx.fillText('shoda', leftMargin + cardWidth - 30, yPos + 85);
+        ctx.fillText('shoda', leftMargin + cardWidth - 40, yPos + 85);
         
         yPos += cardHeight + cardMargin;
       });
       
       // Footer
       ctx.fillStyle = '#f5f5f5';
-      ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+      ctx.fillRect(0, canvas.height - 80, canvas.width, 80);
       
+      // Vycentrovaný footer
       ctx.fillStyle = '#666666';
       ctx.font = '14px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText('Novinky.cz ve spolupráci s NMS', canvas.width / 2, canvas.height - 20);
-
+      
+      // Spočítáme celkovou šířku pro vycentrování
+      const textSpacing = 10;
+      const logoHeight = 30;
+      const novinkyWidth = images.novinky ? (images.novinky.width / images.novinky.height) * logoHeight : 0;
+      const nmsWidth = images.nms ? (images.nms.width / images.nms.height) * logoHeight : 0;
+      const textWidth = ctx.measureText('ve spolupráci s').width;
+      
+      const totalWidth = novinkyWidth + textSpacing + textWidth + textSpacing + nmsWidth;
+      const startX = (canvas.width - totalWidth) / 2;
+      
+      // Novinky logo
+      if (images.novinky) {
+        ctx.drawImage(images.novinky, startX, canvas.height - 55, novinkyWidth, logoHeight);
+      }
+      
+      // Text
+      ctx.textAlign = 'left';
+      ctx.fillText('ve spolupráci s', startX + novinkyWidth + textSpacing, canvas.height - 35);
+      
+      // NMS logo
+      if (images.nms) {
+        ctx.drawImage(images.nms, startX + novinkyWidth + textSpacing + textWidth + textSpacing, canvas.height - 55, nmsWidth, logoHeight);
+      }
+      
       // Convert to image and download
       console.log('Konvertuji na obrázek...');
       const dataUrl = canvas.toDataURL('image/png');
@@ -459,8 +562,10 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
       console.log('Stahování dokončeno!');
     };
     
-    // Spustíme renderování přímo bez čekání na externí obrázky
-    renderCanvas();
+    // Načteme obrázky a pak vykreslíme canvas
+    loadImages().then((images) => {
+      renderCanvas(images);
+    });
   };
 
   // Funkce pro přepínání detailu otázky
@@ -575,7 +680,7 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
                           className="detail-button" 
                           onClick={() => toggleDetail(otazka.id)}
                         >
-                          Detail
+                          Podrobnosti
                           <span className={`arrow ${openDetail === otazka.id ? 'open' : ''}`}>▼</span>
                         </div>
                         <div className={`detail-content ${openDetail === otazka.id ? 'open' : ''}`}>
@@ -645,7 +750,7 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
                 className="detail-button" 
                 onClick={() => toggleDetail(currentQuestion.id)}
               >
-                Detail
+                Podrobnosti
                 <span className={`arrow ${openDetail === currentQuestion.id ? 'open' : ''}`}>▼</span>
               </div>
               <div className={`detail-content ${openDetail === currentQuestion.id ? 'open' : ''}`}>
