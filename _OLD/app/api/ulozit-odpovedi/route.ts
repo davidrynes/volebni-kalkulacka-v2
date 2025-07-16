@@ -38,7 +38,6 @@ export async function POST(request: Request) {
 
     // V produkčním prostředí (Vercel) pouze logujeme data
     if (isProd) {
-      console.log('Odpověď uživatele (v produkci):', JSON.stringify(anonymizedData));
     } else {
       // V lokálním prostředí ukládáme do souboru
       const filePath = path.join(DATA_DIR, `${id}.json`);

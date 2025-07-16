@@ -11,14 +11,7 @@
     <meta name="description" content="Volební kalkulačka pro parlamentní volby 2025 - zjistěte, která strana nejlépe odpovídá vašim názorům" />
     <script src="https://h.seznam.cz/js/dot-small.js"></script>
     <script>
-      window.addEventListener('DOMContentLoaded', function() {
-        // Kontrola, zda je DOT k dispozici
-        if (typeof DOT !== 'undefined') {
-          DOT.cfg({ service: 'novinky' });
-        } else {
-          console.error('DOT není definován. Skript se pravděpodobně nenačetl.');
-        }
-      });
+      DOT.cfg({ service: 'sc-volebni-kalkulacka-poslanecke-volby-2025' });
     </script>
     <style>
       html, body {

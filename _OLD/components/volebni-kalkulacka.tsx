@@ -198,7 +198,6 @@ const VolebniKalkulacka = () => {
       };
       
       // Zde by bylo napojení na API endpoint pro ukládání dat
-      console.log("Odesílám anonymní data:", anonymniData);
       
       // Volání API pro ukládání dat
       await fetch('/api/ulozit-odpovedi', {

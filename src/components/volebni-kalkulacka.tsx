@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'preact/hooks';
+import { useState, useEffect, useRef, useCallback } from 'preact/hooks';
 
 // Definice typů
 interface Otazka {
@@ -69,7 +69,7 @@ const stranyLoga: Record<string, string> = {
 
 // Funkce pro získání loga strany
 const getStranaLogo = (strana: string) => {
-  return stranyLoga[strana] || `https://via.placeholder.com/80x80?text=${encodeURIComponent(strana.substring(0, 3))}`;
+  return stranyLoga[strana] || '';
 };
 
 // Seznam možností odpovědí
@@ -96,14 +96,14 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
   const totalQuestions = otazky?.length || 0;
   const progress = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0;
   
-  const handleAnswer = (questionId: number, answer: number) => {
+  const handleAnswer = useCallback((questionId: number, answer: number) => {
     setUserAnswers(prev => ({
       ...prev,
       [questionId]: answer
     }));
-  };
+  }, []);
 
-  const toggleCrucialQuestion = (questionId: number) => {
+  const toggleCrucialQuestion = useCallback((questionId: number) => {
     setCrucialQuestions(prev => {
       const newSet = new Set(prev);
       if (newSet.has(questionId)) {
@@ -115,9 +115,9 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
       }
       return newSet;
     });
-  };
+  }, []);
 
-  const calculateResults = () => {
+  const calculateResults = useCallback(() => {
     if (!stranyOdpovedi || !otazky || otazky.length === 0) {
       return;
     }
@@ -166,7 +166,7 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
     if (onSubmit) {
       onSubmit(userAnswers, Array.from(crucialQuestions));
     }
-  };
+  }, [stranyOdpovedi, otazky, userAnswers, crucialQuestions, bodovaMatice, onSubmit]);
 
   // Scrollování na začátek při zobrazení výsledků
   useEffect(() => {
@@ -177,16 +177,16 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
     }
   }, [showResults]);
 
-  const handlePrevious = () => {
+  const handlePrevious = useCallback(() => {
     if (showCrucialQuestionsSelection) {
       setShowCrucialQuestionsSelection(false);
       setCurrentQuestionIndex(totalQuestions - 1);
     } else if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
     }
-  };
+  }, [showCrucialQuestionsSelection, totalQuestions, currentQuestionIndex]);
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (otazky && currentQuestionIndex < otazky.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else if (!showCrucialQuestionsSelection) {
@@ -194,20 +194,18 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
     } else {
       calculateResults();
     }
-  };
+  }, [otazky, currentQuestionIndex, showCrucialQuestionsSelection, calculateResults]);
 
-  const resetCalculator = () => {
+  const resetCalculator = useCallback(() => {
     setCurrentQuestionIndex(0);
     setUserAnswers({});
     setCrucialQuestions(new Set());
     setShowResults(false);
     setShowCrucialQuestionsSelection(false);
-  };
+  }, []);
 
-  const downloadResults = () => {
+  const downloadResults = useCallback(() => {
     if (!results.length) return;
-    
-    console.log('Začínám stahování výsledků...');
     
     const canvas = document.createElement('canvas');
     canvas.width = 1080;
@@ -225,8 +223,6 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
 
     // Načtení všech potřebných obrázků
     const loadImages = async () => {
-      console.log('Načítám obrázky...');
-      
       const imagePromises: Promise<{ key: string; img: HTMLImageElement }>[] = [];
       
       // Načteme loga stran pro výsledky
@@ -284,8 +280,6 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
     };
 
     const renderCanvas = (images: Record<string, HTMLImageElement>) => {
-      console.log('Vykresluji canvas...');
-      
       // Definice konstant pro layout
       const numberOfResults = Math.min(results.length, 5); // max 5 stran pro původní rozměry
       const cardHeight = 180;
@@ -502,14 +496,12 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
       }
       
       // Convert to image and download
-      console.log('Konvertuji na obrázek...');
       const dataUrl = canvas.toDataURL('image/png');
       
       // Detekce, zda jsme v iframe/embedded prostředí
       const isEmbedded = window !== window.parent;
       
       if (isEmbedded) {
-        console.log('Posílám zprávu rodičovskému oknu...');
         try {
           // Komunikace s rodičovským oknem pro stažení
           window.parent.postMessage({
@@ -517,7 +509,6 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
             dataUrl: dataUrl,
             filename: 'volebni-kalkulacka-vysledky.png'
           }, '*');
-          console.log('Zpráva byla odeslána rodičovskému oknu');
 
           // Zobrazení zpětné vazby uživateli
           const downloadInfo = document.createElement('div');
@@ -549,7 +540,6 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
           document.body.removeChild(link);
         }
       } else {
-        console.log('Stahuji přímo...');
         // Standardní stažení pro non-iframe
         const link = document.createElement('a');
         link.download = 'volebni-kalkulacka-vysledky.png';
@@ -558,20 +548,18 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
         link.click();
         document.body.removeChild(link);
       }
-      
-      console.log('Stahování dokončeno!');
     };
     
     // Načteme obrázky a pak vykreslíme canvas
     loadImages().then((images) => {
       renderCanvas(images);
     });
-  };
+  }, [results, stranyLoga, stranyBarvy, stranyPopis, bodovaMatice, userAnswers, crucialQuestions]);
 
   // Funkce pro přepínání detailu otázky
-  const toggleDetail = (id: number) => {
+  const toggleDetail = useCallback((id: number) => {
     setOpenDetail(openDetail === id ? null : id);
-  };
+  }, [openDetail]);
 
   if (showResults) {
     return (
@@ -699,6 +687,7 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
           <button 
             className="nav-button back" 
             onClick={handlePrevious}
+            data-dot="sc-volebni-kalkulacka-poslanecke-volby-2025/zpet"
           >
             Zpět
           </button>
@@ -784,6 +773,7 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
           className="nav-button back" 
           onClick={handlePrevious}
           disabled={currentQuestionIndex === 0}
+          data-dot="sc-volebni-kalkulacka-poslanecke-volby-2025/zpet"
         >
           Zpět
         </button>

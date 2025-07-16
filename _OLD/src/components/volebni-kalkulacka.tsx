@@ -129,7 +129,7 @@ const VolebniKalkulacka = () => {
 
     otazky.forEach((otazka, index) => {
       const userOdpoved = odpovedi[otazka.id];
-      const stranaOdpoved = stranaOdpovedi[index];
+      const stranaOdpoved = stranyOdpovedi[index];
       
       if (userOdpoved) {
         pocetZodpovezenych++;
@@ -180,7 +180,6 @@ const VolebniKalkulacka = () => {
           .sort((a, b) => b.shoda - a.shoda)
       };
       
-      console.log("Odesílám anonymní data:", anonymniData);
     } catch (error) {
       console.error("Chyba při odesílání dat:", error);
     }
