@@ -565,7 +565,7 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
     return (
       <div className="volebni-kalkulacka">
         <div className="header">
-          <h1>Volební kalkulačka 2025</h1>
+          <h2>Volební kalkulačka 2025</h2>
           <p>Vaše výsledky</p>
         </div>
         
@@ -621,7 +621,7 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
     return (
       <div className="volebni-kalkulacka">
         <div className="header">
-          <h1>Volební kalkulačka 2025</h1>
+          <h2>Volební kalkulačka 2025</h2>
           <p>Výběr zásadních otázek</p>
         </div>
         
@@ -710,7 +710,7 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
   return (
     <div className="volebni-kalkulacka">
       <div className="header">
-        <h1>Volební kalkulačka 2025</h1>
+        <h2>Volební kalkulačka 2025</h2>
         <p>Porovnejte své názory s politickými stranami</p>
       </div>
       
