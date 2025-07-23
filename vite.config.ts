@@ -7,4 +7,10 @@ export default defineConfig({
   build: {
     target: 'es2018',
   },
+  resolve: {
+    alias: {
+      'react': 'preact/compat',
+      'react-dom': 'preact/compat'
+    }
+  }
 })

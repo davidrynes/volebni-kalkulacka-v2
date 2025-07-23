@@ -280,69 +280,53 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
     };
 
     const renderCanvas = (images: Record<string, HTMLImageElement>) => {
-      // Definice konstant pro layout
-      const numberOfResults = Math.min(results.length, 5); // max 5 stran pro původní rozměry
-      const cardHeight = 180;
-      const cardMargin = 30;
+      // Header s gradientem
+      const headerGradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+      headerGradient.addColorStop(0, '#c8102e');
+      headerGradient.addColorStop(1, '#e53e3e');
       
-      // Header (bez loga Novinek - jen v patičce)
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = headerGradient;
       ctx.fillRect(0, 0, canvas.width, 120);
       
-      ctx.fillStyle = '#1a1a1a';
-      ctx.font = 'bold 40px Arial';
+      // Nadpis
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 48px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText('Volební kalkulačka 2025', canvas.width / 2, 50);
+      ctx.fillText('Volební kalkulačka 2025', canvas.width / 2, 60);
       
       ctx.font = '24px Arial';
-      ctx.fillText('Vaše výsledky', canvas.width / 2, 85);
+      ctx.fillText('Moje výsledky', canvas.width / 2, 95);
 
-      // Date
+      // Datum
       ctx.fillStyle = '#666666';
       ctx.font = '16px Arial';
       ctx.textAlign = 'right';
-      const date = new Date().toLocaleDateString('cs-CZ');
-      ctx.fillText(`Vyplněno: ${date}`, canvas.width - 50, 110);
-      
-      let yPos = 150;
-      const cardWidth = 980;
-      const leftMargin = (canvas.width - cardWidth) / 2;
+      const datum = new Date().toLocaleDateString('cs-CZ');
+      ctx.fillText(`Vyplněno: ${datum}`, canvas.width - 40, 160);
+
+      // Výsledky
+      const numberOfResults = Math.min(results.length, 5);
+      const cardHeight = 180;
+      const cardMargin = 20;
+      const leftMargin = 40;
+      const cardWidth = canvas.width - (leftMargin * 2);
+      let yPos = 200;
 
       results.slice(0, numberOfResults).forEach((result, index) => {
-        // Karta strany
-        ctx.fillStyle = '#ffffff';
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
-        ctx.shadowBlur = 5;
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 2;
+        // Pozadí karty
+        ctx.fillStyle = index === 0 ? '#fff5f5' : (index % 2 === 0 ? '#f9f9f9' : '#ffffff');
+        ctx.fillRect(leftMargin, yPos, cardWidth, cardHeight);
         
-        // Zaoblené rohy pro kartu
-        const radius = 8;
-        ctx.beginPath();
-        ctx.moveTo(leftMargin + radius, yPos);
-        ctx.lineTo(leftMargin + cardWidth - radius, yPos);
-        ctx.arcTo(leftMargin + cardWidth, yPos, leftMargin + cardWidth, yPos + radius, radius);
-        ctx.lineTo(leftMargin + cardWidth, yPos + cardHeight - radius);
-        ctx.arcTo(leftMargin + cardWidth, yPos + cardHeight, leftMargin + cardWidth - radius, yPos + cardHeight, radius);
-        ctx.lineTo(leftMargin + radius, yPos + cardHeight);
-        ctx.arcTo(leftMargin, yPos + cardHeight, leftMargin, yPos + cardHeight - radius, radius);
-        ctx.lineTo(leftMargin, yPos + radius);
-        ctx.arcTo(leftMargin, yPos, leftMargin + radius, yPos, radius);
-        ctx.closePath();
-        ctx.fill();
-        
-        ctx.shadowColor = 'transparent';
-        ctx.shadowBlur = 0;
-        
-        // Levý červený okraj pro první místo
+        // Okraj pro první místo
         if (index === 0) {
-          ctx.fillStyle = '#c8102e';
-          ctx.fillRect(leftMargin, yPos, 4, cardHeight);
+          ctx.strokeStyle = '#c8102e';
+          ctx.lineWidth = 3;
+          ctx.strokeRect(leftMargin, yPos, cardWidth, cardHeight);
         }
-        
-        // Logo strany (stejné jako na webu)
+
+        // Logo strany
         const logoSize = 80;
-        const logoX = leftMargin + 40;
+        const logoX = leftMargin + 20;
         const logoY = yPos + 20;
         
         if (images[result.strana]) {
@@ -556,6 +540,20 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
     });
   }, [results, stranyLoga, stranyBarvy, stranyPopis, bodovaMatice, userAnswers, crucialQuestions]);
 
+  // Funkce pro otevření odkazu v nové záložce (kompatibilní s SC)
+  const openLinkInNewTab = useCallback((url: string) => {
+    // Detekce SC prostředí
+    const isSC = typeof (window as any).$redirectToUrl === 'function';
+    
+    if (isSC) {
+      // V SC prostředí použijeme $redirectToUrl
+      (window as any).$redirectToUrl(url);
+    } else {
+      // V běžném prostředí použijeme window.open
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  }, []);
+
   // Funkce pro přepínání detailu otázky
   const toggleDetail = useCallback((id: number) => {
     setOpenDetail(openDetail === id ? null : id);
@@ -611,7 +609,7 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
         </div>
         
         <div className="footer">
-          <p>Novinky.cz ve spolupráci s <a href="https://nms.global/cz/" target="_blank" rel="noopener noreferrer"><img src="https://d15-a.sdn.cz/d_15/c_img_oa_A/nO7kYQIzllCcIbPDeNDlguXT/13b9/nms.png?fl=nop" alt="NMS" className="nms-logo" /></a></p>
+          <p>Novinky.cz ve spolupráci s <a href="https://nms.global/cz/" target="_blank" rel="noopener noreferrer" onClick={(e) => { e.preventDefault(); openLinkInNewTab('https://nms.global/cz/'); }}><img src="https://d15-a.sdn.cz/d_15/c_img_oa_A/nO7kYQIzllCcIbPDeNDlguXT/13b9/nms.png?fl=nop" alt="NMS" className="nms-logo" /></a></p>
         </div>
       </div>
     );
@@ -701,7 +699,7 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
         </div>
         
         <div className="footer">
-          <p>Novinky.cz ve spolupráci s <a href="https://nms.global/cz/" target="_blank" rel="noopener noreferrer"><img src="https://d15-a.sdn.cz/d_15/c_img_oa_A/nO7kYQIzllCcIbPDeNDlguXT/13b9/nms.png?fl=nop" alt="NMS" className="nms-logo" /></a></p>
+          <p>Novinky.cz ve spolupráci s <a href="https://nms.global/cz/" target="_blank" rel="noopener noreferrer" onClick={(e) => { e.preventDefault(); openLinkInNewTab('https://nms.global/cz/'); }}><img src="https://d15-a.sdn.cz/d_15/c_img_oa_A/nO7kYQIzllCcIbPDeNDlguXT/13b9/nms.png?fl=nop" alt="NMS" className="nms-logo" /></a></p>
         </div>
       </div>
     );
@@ -788,7 +786,7 @@ export function VolebniKalkulacka({ otazky, odpovedi = {}, stranyOdpovedi, bodov
       </div>
       
       <div className="footer">
-        <p>Novinky.cz ve spolupráci s <a href="https://nms.global/cz/" target="_blank" rel="noopener noreferrer"><img src="https://d15-a.sdn.cz/d_15/c_img_oa_A/nO7kYQIzllCcIbPDeNDlguXT/13b9/nms.png?fl=nop" alt="NMS" className="nms-logo" /></a></p>
+        <p>Novinky.cz ve spolupráci s <a href="https://nms.global/cz/" target="_blank" rel="noopener noreferrer" onClick={(e) => { e.preventDefault(); openLinkInNewTab('https://nms.global/cz/'); }}><img src="https://d15-a.sdn.cz/d_15/c_img_oa_A/nO7kYQIzllCcIbPDeNDlguXT/13b9/nms.png?fl=nop" alt="NMS" className="nms-logo" /></a></p>
       </div>
     </div>
   );
